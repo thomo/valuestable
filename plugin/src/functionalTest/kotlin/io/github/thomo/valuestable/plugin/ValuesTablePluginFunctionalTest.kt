@@ -160,4 +160,39 @@ class ValuesTablePluginFunctionalTest {
 		assertThat(resultUpToDate.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.UP_TO_DATE))
 	}
 
+	@Test
+	fun `should create target at specified location`() {
+		getBuildFile().writeText(
+			"""
+			plugins {
+					id('io.github.thomo.valuestable')
+			}
+			
+			valuesTable {
+				target = "testdata/overview.md"
+				files {
+					'default' {
+						file = "testdata/values.yaml"
+					}
+					test {
+						file = "testdata/values-test.yaml"
+					}
+					dev {
+						file = "testdata/values-dev.yaml"
+					}
+				}
+			}
+			""".trimIndent()
+		)
+		val result = GradleRunner.create()
+			.forwardOutput()
+			.withPluginClasspath()
+			.withArguments("valuesTable")
+			.withProjectDir(getProjectDir())
+			.build()
+
+		assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+
+//		assertTrue(File(tempFolder.root, "testdata/overview.md").exists())
+	}
 }

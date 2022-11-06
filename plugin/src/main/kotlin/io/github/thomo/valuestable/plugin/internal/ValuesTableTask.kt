@@ -1,11 +1,11 @@
 package io.github.thomo.valuestable.plugin.internal
 
-import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.TaskAction
 import io.github.thomo.valuestable.TablePrinter
 import io.github.thomo.valuestable.ValueCollector
 import io.github.thomo.valuestable.ValueReader
+import org.gradle.api.DefaultTask
+import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.TaskAction
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -22,11 +22,19 @@ open class ValuesTableTask : DefaultTask() {
 			findByName("valuesTable") as ValuesTableExtension
 		}
 
-		createOverviewFile(extension.files.toList())
+		createOverviewFile(extension.files.toList(), getTargetFile(extension.target))
+
 		println("Overview generated at ${output.absolutePath}")
 	}
 
-	private fun createOverviewFile(sources: List<NamedFile>) {
+	private fun getTargetFile(target: String): File {
+		if (target.isBlank()) return output
+
+		val file = File(target)
+		return if (file.isAbsolute) file else File(project.projectDir, target)
+	}
+
+	private fun createOverviewFile(sources: List<NamedFile>, target: File) {
 		val reader = ValueReader()
 		val collector = ValueCollector().apply {
 			sources.forEach { src ->
@@ -34,8 +42,8 @@ open class ValuesTableTask : DefaultTask() {
 			}
 		}
 
-		output.createNewFile()
-		output.printWriter().use { pw ->
+		target.createNewFile()
+		target.printWriter().use { pw ->
 			pw.println("# Values")
 			pw.println("generated at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
 			TablePrinter.toMarkdown(collector).forEach { pw.println(it) }
