@@ -1,4 +1,4 @@
-package org.handverdrahtet.valuestable
+package io.github.thomo.valuestable
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory

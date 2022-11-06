@@ -1,4 +1,4 @@
-package org.handverdrahtet.plugin
+package io.github.thomo.valuestable.plugin
 
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
 
 private const val BUILD_WITH_PARAMS = """
 plugins {
-    id('org.handverdrahtet.plugin.valuestable')
+    id('io.github.thomo.valuestable')
 }
 
 valuesTable {

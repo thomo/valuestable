@@ -1,4 +1,4 @@
-package org.handverdrahtet.plugin.internal
+package io.github.thomo.valuestable.plugin.internal
 
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.model.ObjectFactory

@@ -5,7 +5,7 @@ plugins {
 	id("com.gradle.plugin-publish") version "1.0.0"
 }
 
-group = "org.handverdrahtet.plugin.valuestable"
+group = "io.github.thomo.valuestable.plugin"
 version = "1.0.0"
 
 repositories {
@@ -30,10 +30,10 @@ pluginBundle {
 
 gradlePlugin {
 	val valuesTable by plugins.creating {
-		id = "org.handverdrahtet.plugin.valuestable"
+		id = "io.github.thomo.valuestable"
 		displayName = "Plugin to create a table of defined helm values"
 		description = "Creates an overview of helm values defined in multiple files"
-		implementationClass = "org.handverdrahtet.plugin.ValuesTablePlugin"
+		implementationClass = "io.github.thomo.valuestable.plugin.ValuesTablePlugin"
 	}
 }
 

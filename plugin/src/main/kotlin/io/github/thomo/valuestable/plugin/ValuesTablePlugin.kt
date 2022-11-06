@@ -1,9 +1,9 @@
-package org.handverdrahtet.plugin
+package io.github.thomo.valuestable.plugin
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.handverdrahtet.plugin.internal.ValuesTableExtension
-import org.handverdrahtet.plugin.internal.ValuesTableTask
+import io.github.thomo.valuestable.plugin.internal.ValuesTableExtension
+import io.github.thomo.valuestable.plugin.internal.ValuesTableTask
 
 class ValuesTablePlugin : Plugin<Project> {
 	override fun apply(project: Project) {

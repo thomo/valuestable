@@ -1,4 +1,4 @@
-package org.handverdrahtet.valuestable
+package io.github.thomo.valuestable
 
 class App {
 	val greeting: String

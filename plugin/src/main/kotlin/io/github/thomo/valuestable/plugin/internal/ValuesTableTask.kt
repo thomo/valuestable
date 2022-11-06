@@ -1,11 +1,11 @@
-package org.handverdrahtet.plugin.internal
+package io.github.thomo.valuestable.plugin.internal
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import org.handverdrahtet.valuestable.TablePrinter
-import org.handverdrahtet.valuestable.ValueCollector
-import org.handverdrahtet.valuestable.ValueReader
+import io.github.thomo.valuestable.TablePrinter
+import io.github.thomo.valuestable.ValueCollector
+import io.github.thomo.valuestable.ValueReader
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
