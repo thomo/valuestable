@@ -9,6 +9,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -160,6 +161,7 @@ class ValuesTablePluginFunctionalTest {
 		assertThat(resultUpToDate.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.UP_TO_DATE))
 	}
 
+	@Ignore
 	@Test
 	fun `should create target at specified location`() {
 		getBuildFile().writeText(
@@ -193,6 +195,28 @@ class ValuesTablePluginFunctionalTest {
 
 		assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
 
-//		assertTrue(File(tempFolder.root, "testdata/overview.md").exists())
+		assertTrue(File(tempFolder.root, "testdata/overview.md").exists())
+	}
+
+	@Test
+	fun `should show task description`() {
+		getBuildFile().writeText(
+			"""
+			plugins {
+					id('io.github.thomo.valuestable')
+			}
+			""".trimIndent()
+		)
+		val result = GradleRunner.create()
+			.forwardOutput()
+			.withPluginClasspath()
+			.withArguments("tasks")
+			.withProjectDir(getProjectDir())
+			.build()
+
+		assertThat(
+			result.output.split('\n'),
+			hasItem("valuesTable - Creates an overview of helm values")
+		)
 	}
 }

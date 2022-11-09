@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "io.github.thomo.valuestable.plugin"
-version = "1.1.0"
+version = "1.1.1"
 
 repositories {
 	mavenCentral()
@@ -16,7 +16,8 @@ dependencies {
 	implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
-	implementation(project(":lib"))
+	implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.0-rc3")
+	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.0-rc3")
 
 	testImplementation("org.jetbrains.kotlin:kotlin-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
@@ -37,13 +38,10 @@ gradlePlugin {
 	}
 }
 
-// Add a source set for the functional test suite
-val functionalTestSourceSet = sourceSets.create("functionalTest") {
-}
+val functionalTestSourceSet = sourceSets.create("functionalTest") {}
 
 configurations["functionalTestImplementation"].extendsFrom(configurations["testImplementation"])
 
-// Add a task to run the functional tests
 val functionalTest by tasks.registering(Test::class) {
 	testClassesDirs = functionalTestSourceSet.output.classesDirs
 	classpath = functionalTestSourceSet.runtimeClasspath
@@ -52,6 +50,11 @@ val functionalTest by tasks.registering(Test::class) {
 gradlePlugin.testSourceSets(functionalTestSourceSet)
 
 tasks.named<Task>("check") {
-	// Run the functional tests as part of `check`
 	dependsOn(functionalTest)
+}
+
+publishing {
+	repositories {
+		mavenLocal()
+	}
 }
