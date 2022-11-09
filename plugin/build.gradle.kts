@@ -1,6 +1,6 @@
 plugins {
 	id("java-gradle-plugin")
-	id("org.jetbrains.kotlin.jvm") version "1.6.21"
+	id("org.jetbrains.kotlin.jvm") version "1.7.21"
 	id("maven-publish")
 	id("com.gradle.plugin-publish") version "1.0.0"
 }
@@ -13,14 +13,15 @@ repositories {
 }
 
 dependencies {
-	implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
-	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+	implementation(platform("org.jetbrains.kotlin:kotlin-bom:${findProperty("kotlinVersion")}"))
+	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${findProperty("kotlinVersion")}")
 
-	implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.0-rc3")
-	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.0-rc3")
+	implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${findProperty("jacksonVersion")}")
+	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${findProperty("jacksonVersion")}")
 
-	testImplementation("org.jetbrains.kotlin:kotlin-test")
-	testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
+	testImplementation("org.jetbrains.kotlin:kotlin-test:${findProperty("kotlinVersion")}")
+	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:${findProperty("kotlinVersion")}")
+	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.1")
 }
 
 pluginBundle {
