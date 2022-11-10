@@ -1,3 +1,5 @@
+@file:Suppress("UNUSED_VARIABLE")
+
 plugins {
 	id("java-gradle-plugin")
 	id("org.jetbrains.kotlin.jvm") version "1.7.21"
@@ -6,7 +8,7 @@ plugins {
 }
 
 group = "io.github.thomo.valuestable.plugin"
-version = "1.1.1"
+version = "1.1.2"
 
 repositories {
 	mavenCentral()
@@ -20,8 +22,6 @@ dependencies {
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${findProperty("jacksonVersion")}")
 
 	testImplementation("org.jetbrains.kotlin:kotlin-test:${findProperty("kotlinVersion")}")
-	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:${findProperty("kotlinVersion")}")
-	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.1")
 }
 
 pluginBundle {

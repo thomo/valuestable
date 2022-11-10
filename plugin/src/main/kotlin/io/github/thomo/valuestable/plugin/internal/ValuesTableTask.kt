@@ -21,10 +21,11 @@ open class ValuesTableTask : DefaultTask() {
 		val extension = project.extensions.run {
 			findByName("valuesTable") as ValuesTableExtension
 		}
+		output = getTargetFile(extension.target).absoluteFile
 
-		createOverviewFile(extension.files.toList(), getTargetFile(extension.target))
+		createOverviewFile(extension.files.toList(), output)
 
-		println("Overview generated at ${output.absolutePath}")
+		println("Overview generated at ${output.absoluteFile}")
 	}
 
 	private fun getTargetFile(target: String): File {
@@ -45,7 +46,9 @@ open class ValuesTableTask : DefaultTask() {
 		target.createNewFile()
 		target.printWriter().use { pw ->
 			pw.println("# Values")
+			pw.println("")
 			pw.println("generated at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+			pw.println("")
 			TablePrinter.toMarkdown(collector).forEach { pw.println(it) }
 		}
 	}

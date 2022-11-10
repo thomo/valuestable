@@ -9,7 +9,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import java.io.File
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -161,7 +160,6 @@ class ValuesTablePluginFunctionalTest {
 		assertThat(resultUpToDate.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.UP_TO_DATE))
 	}
 
-	@Ignore
 	@Test
 	fun `should create target at specified location`() {
 		getBuildFile().writeText(
@@ -171,7 +169,7 @@ class ValuesTablePluginFunctionalTest {
 			}
 			
 			valuesTable {
-				target = "testdata/overview.md"
+				target = "testdata/anotheroverview.md"
 				files {
 					'default' {
 						file = "testdata/values.yaml"
@@ -195,7 +193,12 @@ class ValuesTablePluginFunctionalTest {
 
 		assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
 
-		assertTrue(File(tempFolder.root, "testdata/overview.md").exists())
+		assertTrue(File(tempFolder.root, "testdata/anotheroverview.md").exists())
+
+		val lines = File(tempFolder.root, "testdata/anotheroverview.md").readLines()
+
+		assertEquals("# Values", lines[0])
+		assertThat(lines, hasItem("""|key|default|dev|test|"""))
 	}
 
 	@Test
