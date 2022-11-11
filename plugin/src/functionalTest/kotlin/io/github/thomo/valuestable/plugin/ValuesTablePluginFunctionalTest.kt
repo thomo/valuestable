@@ -11,6 +11,7 @@ import org.junit.rules.TemporaryFolder
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 private const val BUILD_WITH_PARAMS = """
@@ -32,6 +33,8 @@ valuesTable {
 	}
 }
 """
+
+private const val DEFAULT_OUTPUT_FILE = "build/valuesTable/overview.md"
 
 class ValuesTablePluginFunctionalTest {
 	@get:Rule
@@ -72,6 +75,14 @@ class ValuesTablePluginFunctionalTest {
 		}
 	}
 
+	private fun runGradle(arg: String) = GradleRunner
+		.create()
+		.forwardOutput()
+		.withPluginClasspath()
+		.withArguments(arg)
+		.withProjectDir(getProjectDir())
+		.build()
+
 	@Before
 	fun setUp() {
 		getSettingsFile().writeText("")
@@ -84,12 +95,7 @@ class ValuesTablePluginFunctionalTest {
 
 	@Test
 	fun `can run task`() {
-		val result = GradleRunner.create()
-			.forwardOutput()
-			.withPluginClasspath()
-			.withArguments("valuesTable")
-			.withProjectDir(getProjectDir())
-			.build()
+		val result = runGradle("valuesTable")
 
 		// Verify the result
 		assertTrue(result.output.contains("Overview generated at"))
@@ -97,14 +103,9 @@ class ValuesTablePluginFunctionalTest {
 
 	@Test
 	fun `generate table header`() {
-		GradleRunner.create()
-			.forwardOutput()
-			.withPluginClasspath()
-			.withArguments("valuesTable")
-			.withProjectDir(getProjectDir())
-			.build()
+		runGradle("valuesTable")
 
-		val lines = File(tempFolder.root, "build/valuesTable/overview.md").readLines()
+		val lines = File(tempFolder.root, DEFAULT_OUTPUT_FILE).readLines()
 
 		assertEquals("# Values", lines[0])
 		assertThat(lines, hasItem("""|key|default|dev|test|"""))
@@ -112,14 +113,9 @@ class ValuesTablePluginFunctionalTest {
 
 	@Test
 	fun `generate value line of key root-a`() {
-		GradleRunner.create()
-			.forwardOutput()
-			.withPluginClasspath()
-			.withArguments("valuesTable")
-			.withProjectDir(getProjectDir())
-			.build()
+		runGradle("valuesTable")
 
-		val lines = File(tempFolder.root, "build/valuesTable/overview.md").readLines()
+		val lines = File(tempFolder.root, DEFAULT_OUTPUT_FILE).readLines()
 
 		assertEquals("# Values", lines[0])
 		assertThat(lines, hasItem("""|root.a|"aaa"|*default*|*default*|"""))
@@ -127,14 +123,9 @@ class ValuesTablePluginFunctionalTest {
 
 	@Test
 	fun `generate value line of key root-b`() {
-		GradleRunner.create()
-			.forwardOutput()
-			.withPluginClasspath()
-			.withArguments("valuesTable")
-			.withProjectDir(getProjectDir())
-			.build()
+		runGradle("valuesTable")
 
-		val lines = File(tempFolder.root, "build/valuesTable/overview.md").readLines()
+		val lines = File(tempFolder.root, DEFAULT_OUTPUT_FILE).readLines()
 
 		assertEquals("# Values", lines[0])
 		assertThat(lines, hasItem("""|root.b|*(n.d.)*|"bDev"|"bTest"|"""))
@@ -142,19 +133,8 @@ class ValuesTablePluginFunctionalTest {
 
 	@Test
 	fun `apply run task twice - should be up to date`() {
-		val result = GradleRunner.create()
-			.forwardOutput()
-			.withPluginClasspath()
-			.withArguments("valuesTable")
-			.withProjectDir(getProjectDir())
-			.build()
-
-		val resultUpToDate = GradleRunner.create()
-			.withProjectDir(getProjectDir())
-			.withPluginClasspath()
-			.withArguments("valuesTable")
-			.forwardOutput()
-			.build()
+		val result = runGradle("valuesTable")
+		val resultUpToDate = runGradle("valuesTable")
 
 		assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
 		assertThat(resultUpToDate.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.UP_TO_DATE))
@@ -169,7 +149,9 @@ class ValuesTablePluginFunctionalTest {
 			}
 			
 			valuesTable {
+				
 				target = "testdata/anotheroverview.md"
+				
 				files {
 					'default' {
 						file = "testdata/values.yaml"
@@ -184,12 +166,7 @@ class ValuesTablePluginFunctionalTest {
 			}
 			""".trimIndent()
 		)
-		val result = GradleRunner.create()
-			.forwardOutput()
-			.withPluginClasspath()
-			.withArguments("valuesTable")
-			.withProjectDir(getProjectDir())
-			.build()
+		val result = runGradle("valuesTable")
 
 		assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
 
@@ -210,16 +187,23 @@ class ValuesTablePluginFunctionalTest {
 			}
 			""".trimIndent()
 		)
-		val result = GradleRunner.create()
-			.forwardOutput()
-			.withPluginClasspath()
-			.withArguments("tasks")
-			.withProjectDir(getProjectDir())
-			.build()
+		val result = runGradle("tasks")
 
 		assertThat(
 			result.output.split('\n'),
 			hasItem("valuesTable - Creates an overview of helm values")
 		)
+	}
+
+	@Test
+	fun `should regenerate output`() {
+		runGradle("valuesTable")
+
+		File(tempFolder.root, DEFAULT_OUTPUT_FILE).delete()
+		assertFalse(File(tempFolder.root, DEFAULT_OUTPUT_FILE).exists())
+
+		runGradle("valuesTable")
+
+		assertTrue(File(tempFolder.root, DEFAULT_OUTPUT_FILE).exists())
 	}
 }

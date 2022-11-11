@@ -11,12 +11,14 @@ import org.gradle.api.Project
 class ValuesTablePlugin : Plugin<Project> {
 
 	override fun apply(project: Project) {
-		project.extensions.create(TASK_NAME, ValuesTableExtension::class.java)
+		val ext = project.extensions.create(TASK_NAME, ValuesTableExtension::class.java)
 
-		project.tasks.create(TASK_NAME, ValuesTableTask::class.java).apply {
-			this.description = TASK_DESCRIPTION
+		val task = project.tasks.register(TASK_NAME, ValuesTableTask::class.java).get().apply {
 			this.group = TASK_GROUP
+			this.description = TASK_DESCRIPTION
 		}
-	}
 
+		task.target.set(ext.target)
+		task.output.set(task.target.map { path -> project.layout.projectDirectory.file(path) })
+	}
 }

@@ -4,38 +4,33 @@ import io.github.thomo.valuestable.TablePrinter
 import io.github.thomo.valuestable.ValueCollector
 import io.github.thomo.valuestable.ValueReader
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import java.io.File
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-
-private const val outputFile = "valuesTable/overview.md"
 
 open class ValuesTableTask : DefaultTask() {
+
+	@Input
+	val target: Property<String> = project.objects.property(String::class.java)
+
 	@OutputFile
-	var output: File = project.file("${project.buildDir}/$outputFile")
+	val output: RegularFileProperty = project.objects.fileProperty()
 
 	@TaskAction
 	fun action() {
 		val extension = project.extensions.run {
 			findByName("valuesTable") as ValuesTableExtension
 		}
-		output = getTargetFile(extension.target).absoluteFile
 
-		createOverviewFile(extension.files.toList(), output)
+		createOverviewFile(extension.files.toList(), output.get().asFile)
 
-		println("Overview generated at ${output.absoluteFile}")
+		println("Overview generated at ${output.get().asFile}")
 	}
 
-	private fun getTargetFile(target: String): File {
-		if (target.isBlank()) return output
-
-		val file = File(target)
-		return if (file.isAbsolute) file else File(project.projectDir, target)
-	}
-
-	private fun createOverviewFile(sources: List<NamedFile>, target: File) {
+	private fun createOverviewFile(sources: List<NamedFile>, output: File) {
 		val reader = ValueReader()
 		val collector = ValueCollector().apply {
 			sources.forEach { src ->
@@ -43,14 +38,8 @@ open class ValuesTableTask : DefaultTask() {
 			}
 		}
 
-		target.createNewFile()
-		target.printWriter().use { pw ->
-			pw.println("# Values")
-			pw.println("")
-			pw.println("generated at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-			pw.println("")
-			TablePrinter.toMarkdown(collector).forEach { pw.println(it) }
-		}
+		output.createNewFile()
+		output.printWriter().use { pw -> TablePrinter.toMarkdown(collector).forEach { pw.println(it) } }
 	}
 
 }
