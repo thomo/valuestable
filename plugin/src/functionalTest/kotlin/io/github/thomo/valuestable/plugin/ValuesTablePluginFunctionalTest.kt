@@ -3,11 +3,10 @@ package io.github.thomo.valuestable.plugin
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.hamcrest.CoreMatchers.equalTo
-import org.hamcrest.CoreMatchers.hasItem
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.Before
-import org.junit.Rule
-import org.junit.rules.TemporaryFolder
+import org.hamcrest.Matchers.hasItem
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,10 +36,10 @@ valuesTable {
 private const val DEFAULT_OUTPUT_FILE = "build/valuesTable/overview.md"
 
 class ValuesTablePluginFunctionalTest {
-	@get:Rule
-	val tempFolder = TemporaryFolder()
+	@field:TempDir
+	lateinit var tempFolder: File
 
-	private fun getProjectDir() = tempFolder.root
+	private fun getProjectDir() = tempFolder
 	private fun getBuildFile() = getProjectDir().resolve("build.gradle")
 	private fun getSettingsFile() = getProjectDir().resolve("settings.gradle")
 
@@ -83,7 +82,7 @@ class ValuesTablePluginFunctionalTest {
 		.withProjectDir(getProjectDir())
 		.build()
 
-	@Before
+	@BeforeEach
 	fun setUp() {
 		getSettingsFile().writeText("")
 		getBuildFile().writeText(BUILD_WITH_PARAMS)
@@ -105,9 +104,10 @@ class ValuesTablePluginFunctionalTest {
 	fun `generate table header`() {
 		runGradle("valuesTable")
 
-		val lines = File(tempFolder.root, DEFAULT_OUTPUT_FILE).readLines()
+		val lines = File(tempFolder, DEFAULT_OUTPUT_FILE).readLines()
 
 		assertEquals("# Values", lines[0])
+
 		assertThat(lines, hasItem("""|key|default|dev|test|"""))
 	}
 
@@ -115,7 +115,7 @@ class ValuesTablePluginFunctionalTest {
 	fun `generate value line of key root-a`() {
 		runGradle("valuesTable")
 
-		val lines = File(tempFolder.root, DEFAULT_OUTPUT_FILE).readLines()
+		val lines = File(tempFolder, DEFAULT_OUTPUT_FILE).readLines()
 
 		assertEquals("# Values", lines[0])
 		assertThat(lines, hasItem("""|root.a|"aaa"|*default*|*default*|"""))
@@ -125,7 +125,7 @@ class ValuesTablePluginFunctionalTest {
 	fun `generate value line of key root-b`() {
 		runGradle("valuesTable")
 
-		val lines = File(tempFolder.root, DEFAULT_OUTPUT_FILE).readLines()
+		val lines = File(tempFolder, DEFAULT_OUTPUT_FILE).readLines()
 
 		assertEquals("# Values", lines[0])
 		assertThat(lines, hasItem("""|root.b|*(n.d.)*|"bDev"|"bTest"|"""))
@@ -170,9 +170,9 @@ class ValuesTablePluginFunctionalTest {
 
 		assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
 
-		assertTrue(File(tempFolder.root, "testdata/anotheroverview.md").exists())
+		assertTrue(File(tempFolder, "testdata/anotheroverview.md").exists())
 
-		val lines = File(tempFolder.root, "testdata/anotheroverview.md").readLines()
+		val lines = File(tempFolder, "testdata/anotheroverview.md").readLines()
 
 		assertEquals("# Values", lines[0])
 		assertThat(lines, hasItem("""|key|default|dev|test|"""))
@@ -199,11 +199,11 @@ class ValuesTablePluginFunctionalTest {
 	fun `should regenerate output`() {
 		runGradle("valuesTable")
 
-		File(tempFolder.root, DEFAULT_OUTPUT_FILE).delete()
-		assertFalse(File(tempFolder.root, DEFAULT_OUTPUT_FILE).exists())
+		File(tempFolder, DEFAULT_OUTPUT_FILE).delete()
+		assertFalse(File(tempFolder, DEFAULT_OUTPUT_FILE).exists())
 
 		runGradle("valuesTable")
 
-		assertTrue(File(tempFolder.root, DEFAULT_OUTPUT_FILE).exists())
+		assertTrue(File(tempFolder, DEFAULT_OUTPUT_FILE).exists())
 	}
 }

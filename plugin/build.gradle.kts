@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "io.github.thomo.valuestable.plugin"
-version = "1.1.3"
+version = "1.1.4"
 
 repositories {
 	mavenCentral()
@@ -21,7 +21,8 @@ dependencies {
 	implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${findProperty("jacksonVersion")}")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${findProperty("jacksonVersion")}")
 
-	testImplementation("org.jetbrains.kotlin:kotlin-test:${findProperty("kotlinVersion")}")
+	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:${findProperty("kotlinVersion")}")
+	testImplementation("org.hamcrest:hamcrest:2.2")
 }
 
 pluginBundle {
@@ -44,6 +45,7 @@ val functionalTestSourceSet = sourceSets.create("functionalTest") {}
 configurations["functionalTestImplementation"].extendsFrom(configurations["testImplementation"])
 
 val functionalTest by tasks.registering(Test::class) {
+	useJUnitPlatform()
 	testClassesDirs = functionalTestSourceSet.output.classesDirs
 	classpath = functionalTestSourceSet.runtimeClasspath
 }
@@ -59,3 +61,5 @@ publishing {
 		mavenLocal()
 	}
 }
+
+tasks.test { useJUnitPlatform() }
