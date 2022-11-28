@@ -18,6 +18,7 @@ class ValuesTablePlugin : Plugin<Project> {
 			this.description = TASK_DESCRIPTION
 		}
 
+		task.format.set(ext.format)
 		task.target.set(ext.target)
 		task.output.set(task.target.map { path -> project.layout.projectDirectory.file(path) })
 	}

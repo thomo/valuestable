@@ -16,7 +16,7 @@ class BuildFileGenerator {
 	}
 
 	fun build(): String {
-		var result = mutableListOf<String>()
+		val result = mutableListOf<String>()
 		result.add("plugins { id('io.github.thomo.valuestable') }")
 		result.add("valuesTable {")
 		createTargetOption()?.run { result.add(this) }
@@ -26,9 +26,9 @@ class BuildFileGenerator {
 		return result.joinToString("\n")
 	}
 
-	private fun createFormatOption() = format?.run { "  format = $this" }
+	private fun createFormatOption() = format?.run { "  format = \"$this\"" }
 
-	private fun createTargetOption() = target?.run { "  target = $this" }
+	private fun createTargetOption() = target?.run { "  target = \"$this\"" }
 
 	private fun createFilesSection() = """
 	files {

@@ -135,6 +135,35 @@ class ValuesTablePluginFunctionalTest {
 	}
 
 	@Nested
+	inner class GenerateHtml {
+		@BeforeEach
+		internal fun setUp() {
+			getBuildFile().writeText(BuildFileGenerator().format("html").target(DEFAULT_TARGET_HTML).build())
+		}
+
+		@Test
+		fun `generate table header`() {
+			runGradle("valuesTable")
+
+			val lines = File(tempFolder, DEFAULT_TARGET_HTML).readLines()
+
+			assertThat(lines, hasItem("""<th style='text-align:center'>default</th>"""))
+		}
+
+		@Test
+		fun `generate value line of key root-a`() {
+			runGradle("valuesTable")
+
+			val lines = File(tempFolder, DEFAULT_TARGET_HTML).readLines()
+			assertThat(
+				lines,
+				hasItem("""<tr><td>root.a</td><td style="text-align:center">"aaa"</td><td style="text-align:center"><span class="default">default</span></td><td style="text-align:center"><span class="default">default</span></td></tr>""")
+			)
+		}
+
+	}
+
+	@Nested
 	inner class TaskConfig {
 		@Test
 		fun `should create target at specified location`() {
@@ -171,7 +200,7 @@ class ValuesTablePluginFunctionalTest {
 
 		@Test
 		fun `should generate table in html format`() {
-			getBuildFile().writeText(BuildFileGenerator().format("html").build())
+			getBuildFile().writeText(BuildFileGenerator().format("html").target(DEFAULT_TARGET_HTML).build())
 			val result = runGradle("valuesTable")
 
 			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))

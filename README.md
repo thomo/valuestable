@@ -1,11 +1,14 @@
 ## Plugin usage
 
+Example:
+
 ``` groovy
 plugins {
 	id('io.github.thomo.valuestable')
 }
 
 valuesTable {
+    format = "html"
 	target = "testdata/overview.md"
 	files {
 		'default' {
@@ -20,3 +23,9 @@ valuesTable {
 	}
 }
 ```
+
+### Options
+
+- `format` - output format, `markdown` (default) and `html` are supported
+- `target` - location of target file
+- `files` - files which content will be compared
