@@ -4,7 +4,7 @@ plugins {
 	id("java-gradle-plugin")
 	id("org.jetbrains.kotlin.jvm") version "1.9.0"
 	id("maven-publish")
-	id("com.gradle.plugin-publish") version "1.0.0"
+	id("com.gradle.plugin-publish") version "1.2.0"
 }
 
 group = "io.github.thomo.valuestable.plugin"
