@@ -109,7 +109,7 @@ class ValuesTablePluginFunctionalTest {
 
 			assertEquals("# Values", lines[0])
 
-			assertThat(lines, hasItem("""|key|default|dev|test|"""))
+			assertThat(lines, hasItem("""|key|values|"""))
 		}
 
 		@Test
@@ -119,17 +119,17 @@ class ValuesTablePluginFunctionalTest {
 			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines()
 
 			assertEquals("# Values", lines[0])
-			assertThat(lines, hasItem("""|root.a|"aaa"|*default*|*default*|"""))
+			assertThat(lines, hasItem("""|root.a|default: "aaa"<br/>dev: *default*<br/>test: *default*|"""))
 		}
 
 		@Test
-		fun `generate value line of key root-b`() {
+		fun `generate value line of key root-c`() {
 			runGradle("valuesTable")
 
 			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines()
 
 			assertEquals("# Values", lines[0])
-			assertThat(lines, hasItem("""|root.b|*(n.d.)*|"bDev"|"bTest"|"""))
+			assertThat(lines, hasItem("""|root.c|default: "ccc"<br/>dev: null<br/>test: "cTest"|"""))
 		}
 
 	}
@@ -157,7 +157,9 @@ class ValuesTablePluginFunctionalTest {
 			val lines = File(tempFolder, DEFAULT_TARGET_HTML).readLines()
 			assertThat(
 				lines,
-				hasItem("""<tr><td>root.a</td><td style="text-align:center">"aaa"</td><td style="text-align:center"><span class="default">default</span></td><td style="text-align:center"><span class="default">default</span></td></tr>""")
+				hasItem(
+					"""<tr><td>root.a</td><td style="text-align:center">"aaa"</td><td style="text-align:center"><span class="default">default</span></td><td style="text-align:center"><span class="default">default</span></td></tr>"""
+				)
 			)
 		}
 

@@ -1,6 +1,8 @@
 package io.github.thomo.valuestable.printer
 
 import io.github.thomo.valuestable.ValueCollector
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class HtmlGenerator : Generator {
 	override fun generate(collector: ValueCollector) = mutableListOf(
@@ -12,24 +14,25 @@ class HtmlGenerator : Generator {
 			<style></style>
 			</head>
 			""".trimIndent(),
-		"<body><h1>Values</h1><p>generated at 2022-11-15 13:35:34</p>",
+		"<body><h1>Values</h1><p>generated at " + LocalDateTime.now()
+			.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "</p>",
 		"<table>"
-	) + generateTableHead(collector) + "<tbody>" + generateTableRows(collector) +
+	) + generateTableHead() + "<tbody>" + generateTableRows(collector) +
 		"</tbody></table></body></html>"
 
-	fun generateTableHead(vc: ValueCollector) =
-		mutableListOf("<thead><tr><th>key</th>") +
-			vc.getNames()
-				.map { name -> "<th style='text-align:center'>$name</th>" } +
-			"</tr></thead>"
+	fun generateTableHead() =
+		"<thead><tr><th>key</th><th>values</th></tr></thead>"
 
-	fun generateTableRows(vc: ValueCollector) =
-		vc.keys().map { key -> "<tr>" + generateTableRow(key, vc.getValues(key)) + "</tr>" }
+	fun generateTableRows(collector: ValueCollector) =
+		collector.keys().map { key -> "<tr>" + generateTableRow(key, collector) + "</tr>" }
 
-	fun generateTableRow(key: String, values: List<String?>) =
-		"<td>$key</td>" +
-			values.map { v -> "<td style=\"text-align:center\">" + (v ?: "<span class=\"default\">default</span>") + "</td>" }
-				.joinToString("")
+	fun generateTableRow(key: String, collector: ValueCollector): String {
+		val names = collector.getNames()
+		return "<td>$key</td><td>" +
+			collector.getValues(key)
+				.mapIndexed { index, v -> names[index] + ": " + (v ?: if (index == 0) "*(n.d.)*" else "*default*") }
+				.joinToString("<br/>", postfix = "</td>")
+	}
 
 	override fun fileExtension() = "html"
 }

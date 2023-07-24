@@ -8,8 +8,6 @@ plugins {
 }
 
 valuesTable {
-    format = "html"
-	target = "testdata/overview.md"
 	files {
 		'default' {
 			file = "testdata/values.yaml"
@@ -26,6 +24,4 @@ valuesTable {
 
 ### Options
 
-- `format` - output format, `markdown` (default) and `html` are supported
-- `target` - location of target file
 - `files` - files which content will be compared

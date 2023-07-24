@@ -2,7 +2,6 @@ package io.github.thomo.valuestable.plugin.internal
 
 import io.github.thomo.valuestable.ValueCollector
 import io.github.thomo.valuestable.ValueReader
-import io.github.thomo.valuestable.printer.HtmlGenerator
 import io.github.thomo.valuestable.printer.MarkdownGenerator
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
@@ -37,9 +36,9 @@ open class ValuesTableTask : DefaultTask() {
 	}
 
 	private fun createGenerator() = when (format.get().lowercase()) {
-		"html" -> HtmlGenerator()
+		// "html" -> HtmlGenerator()
 		"markdown" -> MarkdownGenerator()
-		else -> throw IllegalArgumentException("Invalid format specification")
+		else -> throw IllegalArgumentException("Unsupported format specification")
 	}
 
 	private fun writeOutput(lines: List<String>, output: File) {
