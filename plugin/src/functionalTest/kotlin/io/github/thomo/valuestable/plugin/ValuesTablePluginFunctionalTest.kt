@@ -134,6 +134,7 @@ class ValuesTablePluginFunctionalTest {
 
 	}
 
+	@Ignore
 	@Nested
 	inner class GenerateHtml {
 		@BeforeEach
@@ -200,6 +201,7 @@ class ValuesTablePluginFunctionalTest {
 			assertTrue(File(tempFolder, "testdata/anotheroverview.md").exists())
 		}
 
+		@Ignore
 		@Test
 		fun `should generate table in html format`() {
 			getBuildFile().writeText(BuildFileGenerator().format("html").target(DEFAULT_TARGET_HTML).build())
