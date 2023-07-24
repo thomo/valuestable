@@ -1,7 +1,7 @@
 package io.github.thomo.valuestable.plugin.internal
 
-import io.github.thomo.valuestable.ValueCollector
-import io.github.thomo.valuestable.ValueReader
+import io.github.thomo.valuestable.model.ValueCollector
+import io.github.thomo.valuestable.plugin.ValueReader
 import io.github.thomo.valuestable.printer.MarkdownGenerator
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty

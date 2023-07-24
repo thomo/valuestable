@@ -1,5 +1,4 @@
-package io.github.thomo.valuestable
-
+package io.github.thomo.valuestable.model
 
 class ValueCollector() {
 	private val names = mutableListOf<String>()

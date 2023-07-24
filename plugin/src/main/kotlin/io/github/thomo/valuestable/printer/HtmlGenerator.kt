@@ -1,6 +1,6 @@
 package io.github.thomo.valuestable.printer
 
-import io.github.thomo.valuestable.ValueCollector
+import io.github.thomo.valuestable.model.ValueCollector
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 

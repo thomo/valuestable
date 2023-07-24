@@ -1,8 +1,11 @@
-package io.github.thomo.valuestable
+package io.github.thomo.valuestable.plugin
+
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import io.github.thomo.valuestable.model.ValueMap
+import io.github.thomo.valuestable.model.emptyValueMap
 import java.nio.file.Path
 
 class ValueReader() {
