@@ -9,7 +9,7 @@ open class ValuesTableExtension(project: Project) {
 
 	val target: Property<String> = project.objects.property(String::class.java).convention(
 		project.layout.buildDirectory
-			.file("valuesTable/overview.md").get()
+			.file("valuesTable/overview").get()
 			.asFile
 			.path
 	)

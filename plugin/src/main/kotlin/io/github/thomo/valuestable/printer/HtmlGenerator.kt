@@ -30,7 +30,7 @@ class HtmlGenerator : Generator {
 		val names = collector.getNames()
 		return "<td>$key</td><td>" +
 			collector.getValues(key)
-				.mapIndexed { index, v -> names[index] + ": " + (v ?: if (index == 0) "*(n.d.)*" else "*default*") }
+				.mapIndexed { index, v -> names[index] + ": " + (v ?: if (index == 0) "<i>(n.d.)</i>" else "<i>default</i>") }
 				.joinToString("<br/>", postfix = "</td>")
 	}
 

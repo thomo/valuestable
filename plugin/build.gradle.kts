@@ -2,13 +2,13 @@
 
 plugins {
 	id("java-gradle-plugin")
-	id("org.jetbrains.kotlin.jvm") version "1.7.21"
+	id("org.jetbrains.kotlin.jvm") version "1.9.0"
 	id("maven-publish")
 	id("com.gradle.plugin-publish") version "1.0.0"
 }
 
 group = "io.github.thomo.valuestable.plugin"
-version = "1.3.0"
+version = "1.4.0"
 
 repositories {
 	mavenCentral()
@@ -25,17 +25,14 @@ dependencies {
 	testImplementation("org.hamcrest:hamcrest:2.2")
 }
 
-pluginBundle {
-	website = "https://github.com/thomo/valuestable"
-	vcsUrl = "https://github.com/thomo/valuestable.git"
-	tags = listOf("yaml", "helm", "values", "markdown")
-}
-
 gradlePlugin {
+	website.set("https://github.com/thomo/valuestable")
+	vcsUrl.set("https://github.com/thomo/valuestable.git")
 	val valuesTable by plugins.creating {
 		id = "io.github.thomo.valuestable"
 		displayName = "Plugin to create a table of defined helm values"
 		description = "Creates an overview of helm values defined in multiple files"
+		tags = listOf("yaml", "helm", "values", "markdown")
 		implementationClass = "io.github.thomo.valuestable.plugin.ValuesTablePlugin"
 	}
 }

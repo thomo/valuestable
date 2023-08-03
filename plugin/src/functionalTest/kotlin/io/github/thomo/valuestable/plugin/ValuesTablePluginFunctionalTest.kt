@@ -14,6 +14,10 @@ import kotlin.test.*
 private const val DEFAULT_TARGET_MARKDOWN = "build/valuesTable/overview.md"
 private const val DEFAULT_TARGET_HTML = "build/valuesTable/overview.html"
 
+private const val VALUES_DEFAULT_FILENAME = "testdata/values.yaml"
+private const val VALUES_DEV_FILENAME = "testdata/values-dev.yaml"
+private const val VALUES_TEST_FILENAME = "testdata/values-test.yaml"
+
 class ValuesTablePluginFunctionalTest {
 	@field:TempDir
 	lateinit var tempFolder: File
@@ -66,9 +70,9 @@ class ValuesTablePluginFunctionalTest {
 		getSettingsFile().writeText("")
 		getBuildFile().writeText(BuildFileGenerator().build())
 
-		createDefaultValueFile(File(getProjectDir(), "testdata/values.yaml"))
-		createValuesFile(File(getProjectDir(), "testdata/values-dev.yaml"), "bDev", "")
-		createValuesFile(File(getProjectDir(), "testdata/values-test.yaml"), "bTest", "cTest")
+		createDefaultValueFile(File(getProjectDir(), VALUES_DEFAULT_FILENAME))
+		createValuesFile(File(getProjectDir(), VALUES_DEV_FILENAME), "bDev", "")
+		createValuesFile(File(getProjectDir(), VALUES_TEST_FILENAME), "bTest", "cTest")
 	}
 
 	@Nested
@@ -134,12 +138,11 @@ class ValuesTablePluginFunctionalTest {
 
 	}
 
-	@Ignore
 	@Nested
 	inner class GenerateHtml {
 		@BeforeEach
 		internal fun setUp() {
-			getBuildFile().writeText(BuildFileGenerator().format("html").target(DEFAULT_TARGET_HTML).build())
+			getBuildFile().writeText(BuildFileGenerator().build())
 		}
 
 		@Test
@@ -148,7 +151,7 @@ class ValuesTablePluginFunctionalTest {
 
 			val lines = File(tempFolder, DEFAULT_TARGET_HTML).readLines()
 
-			assertThat(lines, hasItem("""<th style='text-align:center'>default</th>"""))
+			assertThat(lines, hasItem("""<thead><tr><th>key</th><th>values</th></tr></thead>"""))
 		}
 
 		@Test
@@ -159,7 +162,7 @@ class ValuesTablePluginFunctionalTest {
 			assertThat(
 				lines,
 				hasItem(
-					"""<tr><td>root.a</td><td style="text-align:center">"aaa"</td><td style="text-align:center"><span class="default">default</span></td><td style="text-align:center"><span class="default">default</span></td></tr>"""
+					"""<tr><td>root.a</td><td>default: "aaa"<br/>dev: <i>default</i><br/>test: <i>default</i></td></tr>"""
 				)
 			)
 		}
@@ -178,7 +181,7 @@ class ValuesTablePluginFunctionalTest {
 			
 			valuesTable {
 				
-				target = "testdata/anotheroverview.md"
+				target = "testdata/anotheroverview"
 				
 				files {
 					'default' {
@@ -201,10 +204,9 @@ class ValuesTablePluginFunctionalTest {
 			assertTrue(File(tempFolder, "testdata/anotheroverview.md").exists())
 		}
 
-		@Ignore
 		@Test
 		fun `should generate table in html format`() {
-			getBuildFile().writeText(BuildFileGenerator().format("html").target(DEFAULT_TARGET_HTML).build())
+			getBuildFile().writeText(BuildFileGenerator().build())
 			val result = runGradle("valuesTable")
 
 			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
@@ -224,6 +226,7 @@ class ValuesTablePluginFunctionalTest {
 			assertThat(resultUpToDate.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.UP_TO_DATE))
 		}
 
+		// @Ignore("not working at the moment")
 		@Test
 		fun `should regenerate target when target was removed`() {
 			runGradle("valuesTable")
@@ -239,14 +242,17 @@ class ValuesTablePluginFunctionalTest {
 		@Ignore("not yet implemented")
 		@Test
 		fun `should update target when one input file was changed`() {
+
+			// first create output with last values is "cTest"
 			runGradle("valuesTable")
 
-			createValuesFile(File(getProjectDir(), "testdata/values-test.yaml"), "bTest", "xTest")
+			// change the file -> should trigger regeneration
+			createValuesFile(File(getProjectDir(), VALUES_TEST_FILENAME), "bTest", "xTest")
 
 			runGradle("valuesTable")
 
-			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines()
-			assertThat(lines, hasItem("""|root.c|*ccc*|null|"xTest"|"""))
+			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines().filter { it.startsWith("|root.c|") }
+			assertThat(lines, hasItem("""|root.c|default: "ccc"<br/>dev: null<br/>test: "xTest"|"""))
 		}
 
 	}
