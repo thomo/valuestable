@@ -11,7 +11,13 @@ class HtmlGenerator : Generator {
 			<html>
 			<head>
 			<META http-equiv="Content-Type" content="text/html; charset=utf-8">
-			<style></style>
+			<style>
+				body {font-family: Arial, sans-serif;}
+				h1 {color: #333;}
+				table {border-collapse: collapse; width: 100%;}
+				th, td {border: 1px solid #ddd; padding: 8px; text-align: left;}
+				th {background-color: #f2f2f2;}
+			</style>
 			</head>
 			""".trimIndent(),
 		"<body><h1>Values</h1><p>generated at " + LocalDateTime.now()
