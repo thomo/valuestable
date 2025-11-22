@@ -1,40 +1,105 @@
 # ValuesTable
 
-Generates an overview of values in markdown and html format. The report files are generated in `build/valuestable`
-folder.
+![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/io.github.thomo.valuestable)
 
-## Plugin usage
+Generates an overview of Helm values in Markdown and HTML format. The report files are generated in the `build/valuesTable` folder.
 
-Add the following to your `build.gradle`:
+## Requirements
 
-``` groovy
+- Java 21 or higher
+- Gradle 8.x
+
+## Installation
+
+### Kotlin DSL
+
+```kotlin
 plugins {
-  id('io.github.thomo.valuestable')
+  id("io.github.thomo.valuestable") version "1.4.2"
 }
+```
 
+### Groovy DSL
+
+```groovy
+plugins {
+  id "io.github.thomo.valuestable" version "1.4.2"
+}
+```
+
+## Configuration
+
+Configure the plugin in your `build.gradle.kts` (Kotlin) or `build.gradle` (Groovy).
+
+### Kotlin DSL
+
+```kotlin
+valuesTable {
+    // Optional: Output directory (default: build/valuesTable/overview)
+    target.set("build/my-overview")
+    
+    // Optional: Output format (default: markdown)
+    // Currently supports generating both Markdown and HTML automatically.
+    
+    files {
+        register("default") {
+            file = "values.yaml"
+        }
+        register("dev") {
+            file = "values-dev.yaml"
+        }
+        register("test") {
+            file = "values-test.yaml"
+        }
+    }
+}
+```
+
+### Groovy DSL
+
+```groovy
 valuesTable {
   files {
     'default' {
-      file = "testdata/values.yaml"
+      file = "values.yaml"
     }
-    test.file = "testdata/values-test.yaml"
-    dev.file = "testdata/values-dev.yaml"
+    dev {
+      file = "values-dev.yaml"
+    }
+    test {
+      file = "values-test.yaml"
+    }
   }
 }
 ```
 
-Generate the report:
+## Usage
+
+Generate the report by running the `valuesTable` task:
 
 ```bash
-$ ./gradlew valuesTable
-> Task :valuesTable
-Overview generated at /Users/thomo/demo/build/valuesTable/overview.md
-Overview generated at /Users/thomo/demo/build/valuesTable/overview.html
+./gradlew valuesTable
+```
 
-BUILD SUCCESSFUL in 2s
+Output:
+```text
+> Task :valuesTable
+Overview generated at /path/to/project/build/valuesTable/overview.md
+Overview generated at /path/to/project/build/valuesTable/overview.html
+
+BUILD SUCCESSFUL in 1s
 1 actionable task: 1 executed
 ```
 
-### Options
+## Output
 
-- `files` - files which content will be compared
+The plugin generates two files:
+1.  `overview.md`: A Markdown table comparing the values.
+2.  `overview.html`: An HTML table comparing the values.
+
+### Example Output
+
+| key | values |
+| :--- | :--- |
+| `root.a` | default: "aaa"<br/>dev: *default*<br/>test: *default* |
+| `root.c` | default: "ccc"<br/>dev: null<br/>test: "cTest" |
