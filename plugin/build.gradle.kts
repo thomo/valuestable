@@ -2,7 +2,7 @@
 
 plugins {
 	id("java-gradle-plugin")
-	id("org.jetbrains.kotlin.jvm") version "2.0.21"
+	id("org.jetbrains.kotlin.jvm") version "2.2.21"
 	id("maven-publish")
 	id("com.gradle.plugin-publish") version "1.2.0"
 }
@@ -11,7 +11,9 @@ group = "io.github.thomo.valuestable.plugin"
 version = "1.4.1"
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-	kotlinOptions.jvmTarget = "21"
+	compilerOptions {
+		jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+	}
 }
 
 tasks.withType<JavaCompile> {
