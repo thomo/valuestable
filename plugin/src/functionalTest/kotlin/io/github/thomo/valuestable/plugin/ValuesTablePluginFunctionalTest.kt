@@ -133,7 +133,7 @@ class ValuesTablePluginFunctionalTest {
 			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines()
 
 			assertEquals("# Values", lines[0])
-			assertThat(lines, hasItem("""|root.c|default: "ccc"<br/>dev: null<br/>test: "cTest"|"""))
+			assertThat(lines, hasItem("""|root.c|default: "ccc"<br/>dev: *default*<br/>test: "cTest"|"""))
 		}
 
 	}
@@ -151,7 +151,7 @@ class ValuesTablePluginFunctionalTest {
 
 			val lines = File(tempFolder, DEFAULT_TARGET_HTML).readLines()
 
-			assertThat(lines, hasItem("""<thead><tr><th>key</th><th>values</th></tr></thead>"""))
+			assertThat(lines, hasItem("""<thead><tr><th>Key</th><th>Values</th></tr></thead>"""))
 		}
 
 		@Test
@@ -162,7 +162,7 @@ class ValuesTablePluginFunctionalTest {
 			assertThat(
 				lines,
 				hasItem(
-					"""<tr><td>root.a</td><td>default: "aaa"<br/>dev: <i>default</i><br/>test: <i>default</i></td></tr>"""
+					"""<tr><td><code>root.a</code></td><td class="value-cell"><span class="label">default:</span>"aaa"<br/><span class="label">dev:</span><i>default</i><br/><span class="label">test:</span><i>default</i></td></tr>"""
 				)
 			)
 		}
@@ -251,7 +251,7 @@ class ValuesTablePluginFunctionalTest {
 			runGradle("valuesTable")
 
 			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines().filter { it.startsWith("|root.c|") }
-			assertThat(lines, hasItem("""|root.c|default: "ccc"<br/>dev: null<br/>test: "xTest"|"""))
+			assertThat(lines, hasItem("""|root.c|default: "ccc"<br/>dev: *default*<br/>test: "xTest"|"""))
 		}
 
 	}

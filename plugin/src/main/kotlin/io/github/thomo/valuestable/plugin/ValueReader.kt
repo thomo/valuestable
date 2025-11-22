@@ -26,7 +26,7 @@ class ValueReader() {
 			}
 			result
 		} else {
-			result.toMutableMap().apply { put(prefix, node.toString()) }
+			result.toMutableMap().apply { put(prefix, if (node.isNull) null else node.toString()) }
 		}
 	}
 
