@@ -75,14 +75,86 @@ class HtmlGenerator : Generator {
 					color: #495057;
 					margin-right: 4px;
 				}
+				.filter-container {
+					margin-bottom: 20px;
+					display: flex;
+					gap: 15px;
+					align-items: center;
+				}
+				.filter-input {
+					flex: 1;
+					max-width: 400px;
+					padding: 10px 15px;
+					border: 1px solid var(--border-color);
+					border-radius: 4px;
+					font-size: 14px;
+					font-family: inherit;
+				}
+				.filter-input:focus {
+					outline: none;
+					border-color: var(--primary-color);
+					box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+				}
+				.row-count {
+					color: #6c757d;
+					font-size: 0.9em;
+				}
+				tr.hidden {
+					display: none;
+				}
 			</style>
+			<script>
+				function filterTable() {
+					const input = document.getElementById('filterInput');
+					const filter = input.value.toLowerCase();
+					const table = document.getElementById('valuesTable');
+					const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+					let visibleCount = 0;
+					
+					for (let i = 0; i < rows.length; i++) {
+						const row = rows[i];
+						const cells = row.getElementsByTagName('td');
+						let found = false;
+						
+						for (let j = 0; j < cells.length; j++) {
+							const cellText = cells[j].textContent || cells[j].innerText;
+							if (cellText.toLowerCase().indexOf(filter) > -1) {
+								found = true;
+								break;
+							}
+						}
+						
+						if (found) {
+							row.classList.remove('hidden');
+							visibleCount++;
+						} else {
+							row.classList.add('hidden');
+						}
+					}
+					
+					document.getElementById('rowCount').textContent = 
+						`Showing ${'$'}{visibleCount} of ${'$'}{rows.length} rows`;
+				}
+				
+				window.addEventListener('DOMContentLoaded', function() {
+					const totalRows = document.getElementById('valuesTable')
+						.getElementsByTagName('tbody')[0]
+						.getElementsByTagName('tr').length;
+					document.getElementById('rowCount').textContent = 
+						`Showing ${'$'}{totalRows} of ${'$'}{totalRows} rows`;
+				});
+			</script>
 			</head>
 			<body>
 			""".trimIndent(),
 		"<h1>Values Overview</h1>",
 		"<p class=\"meta\">Generated at " + LocalDateTime.now()
 			.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "</p>",
-		"<table>"
+		"<div class=\"filter-container\">",
+		"<input type=\"text\" id=\"filterInput\" class=\"filter-input\" placeholder=\"Filter by key or value...\" onkeyup=\"filterTable()\">",
+		"<span id=\"rowCount\" class=\"row-count\"></span>",
+		"</div>",
+		"<table id=\"valuesTable\">"
 	) + generateTableHead() + "<tbody>" + generateTableRows(collector) +
 		"</tbody></table></body></html>"
 
