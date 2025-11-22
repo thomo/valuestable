@@ -10,6 +10,15 @@ plugins {
 group = "io.github.thomo.valuestable.plugin"
 version = "1.4.1"
 
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+	kotlinOptions.jvmTarget = "17"
+}
+
+tasks.withType<JavaCompile> {
+	sourceCompatibility = "17"
+	targetCompatibility = "17"
+}
+
 repositories {
 	mavenCentral()
 }

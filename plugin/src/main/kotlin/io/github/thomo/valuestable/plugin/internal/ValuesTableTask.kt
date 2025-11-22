@@ -7,9 +7,13 @@ import io.github.thomo.valuestable.printer.HtmlGenerator
 import io.github.thomo.valuestable.printer.MarkdownGenerator
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import java.io.File
 
@@ -21,6 +25,15 @@ open class ValuesTableTask : DefaultTask() {
 	@Input
 	val target: Property<String> = project.objects.property(String::class.java)
 
+	@Input
+	val sources: ListProperty<NamedFile> = project.objects.listProperty(NamedFile::class.java)
+
+	@InputFiles
+	@PathSensitive(PathSensitivity.RELATIVE)
+	fun getInputFiles(): List<File> {
+		return sources.get().map { project.file(it.file) }
+	}
+
 	@OutputFile
 	val outputMarkdown: RegularFileProperty = project.objects.fileProperty()
 
@@ -29,11 +42,7 @@ open class ValuesTableTask : DefaultTask() {
 
 	@TaskAction
 	fun action() {
-		val extension = project.extensions.run {
-			findByName("valuesTable") as ValuesTableExtension
-		}
-
-		val collector = collectValues(extension.files.toList())
+		val collector = collectValues(sources.get())
 
 		extracted(collector, createGenerator("markdown"), outputMarkdown.get().asFile)
 		extracted(collector, createGenerator("html"), outputHtml.get().asFile)

@@ -239,7 +239,6 @@ class ValuesTablePluginFunctionalTest {
 			assertTrue(File(tempFolder, DEFAULT_TARGET_MARKDOWN).exists())
 		}
 
-		@Ignore("not yet implemented")
 		@Test
 		fun `should update target when one input file was changed`() {
 

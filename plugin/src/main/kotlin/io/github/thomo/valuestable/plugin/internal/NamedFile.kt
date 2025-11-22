@@ -1,5 +1,7 @@
 package io.github.thomo.valuestable.plugin.internal
 
-open class NamedFile constructor(val name: String) {
+import java.io.Serializable
+
+open class NamedFile constructor(val name: String): Serializable {
 	var file: String = ""
 }
