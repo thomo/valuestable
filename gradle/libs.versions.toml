@@ -2,7 +2,7 @@
 kotlin = "2.2.21"
 jackson = "2.15.2"
 hamcrest = "2.2"
-pluginPublish = "1.2.0"
+pluginPublish = "2.0.0"
 
 [libraries]
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
