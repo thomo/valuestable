@@ -166,7 +166,8 @@ class HtmlGenerator : Generator {
 
 	fun generateTableRow(key: String, collector: ValueCollector): String {
 		val names = collector.getNames()
-		return "<td><code>$key</code></td><td class=\"value-cell\">" +
+		val formattedKey = key.replace(".", "<wbr>.")
+		return "<td><code>$formattedKey</code></td><td class=\"value-cell\">" +
 			collector.getValues(key)
 				.mapIndexed { index, v -> 
 					"<span class=\"label\">${names[index]}:</span>" + ValueFormatter.format(v, index, true) 
