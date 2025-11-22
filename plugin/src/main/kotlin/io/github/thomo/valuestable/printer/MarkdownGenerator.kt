@@ -24,9 +24,10 @@ class MarkdownGenerator : Generator {
 	private fun buildLine(key: String, vc: ValueCollector): String {
 		val names = vc.getNames()
 
-		return "|$key|" +
+		val formattedKey = key.replace(".", "<wbr>.")
+		return "|$formattedKey|" +
 			vc.getValues(key)
-				.mapIndexed { index, v -> names[index] + ": " + (v ?: if (index == 0) "*(n.d.)*" else "*default*") }
+				.mapIndexed { index, v -> names[index] + ": " + ValueFormatter.format(v, index, false) }
 				.joinToString("<br/>", postfix = "|")
 	}
 }

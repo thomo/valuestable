@@ -2,27 +2,38 @@
 
 plugins {
 	id("java-gradle-plugin")
-	id("org.jetbrains.kotlin.jvm") version "1.9.0"
+	alias(libs.plugins.kotlin.jvm)
 	id("maven-publish")
-	id("com.gradle.plugin-publish") version "1.2.0"
+	alias(libs.plugins.plugin.publish)
 }
 
 group = "io.github.thomo.valuestable.plugin"
-version = "1.4.1"
+version = "1.4.2"
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+	compilerOptions {
+		jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+	}
+}
+
+tasks.withType<JavaCompile> {
+	sourceCompatibility = "21"
+	targetCompatibility = "21"
+}
 
 repositories {
 	mavenCentral()
 }
 
 dependencies {
-	implementation(platform("org.jetbrains.kotlin:kotlin-bom:${findProperty("kotlinVersion")}"))
-	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${findProperty("kotlinVersion")}")
+	implementation(platform(libs.kotlin.bom))
+	implementation(libs.kotlin.stdlib)
 
-	implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${findProperty("jacksonVersion")}")
-	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:${findProperty("jacksonVersion")}")
+	implementation(libs.jackson.yaml)
+	implementation(libs.jackson.kotlin)
 
-	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:${findProperty("kotlinVersion")}")
-	testImplementation("org.hamcrest:hamcrest:2.2")
+	testImplementation(libs.kotlin.test)
+	testImplementation(libs.hamcrest)
 }
 
 gradlePlugin {

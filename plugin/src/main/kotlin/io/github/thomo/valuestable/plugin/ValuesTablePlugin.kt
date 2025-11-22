@@ -20,6 +20,7 @@ class ValuesTablePlugin : Plugin<Project> {
 
 		task.format.set(ext.format)
 		task.target.set(ext.target)
+		task.sources.set(project.provider { ext.files.toList() })
 		task.outputMarkdown.set(task.target.map { path -> project.layout.projectDirectory.file("$path.md") })
 		task.outputHtml.set(task.target.map { path -> project.layout.projectDirectory.file("$path.html") })
 	}
