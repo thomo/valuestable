@@ -162,7 +162,7 @@ class ValuesTablePluginFunctionalTest {
 			assertThat(
 				lines,
 				hasItem(
-					"""<tr><td><code>root<wbr>.a</code></td><td class="value-cell"><span class="label">default:</span>"aaa"<br/><span class="label">dev:</span><i>default</i><br/><span class="label">test:</span><i>default</i></td></tr>"""
+					"""<tr><td><code>root<wbr>.a</code></td><td class="value-cell"><span class="label">default:</span>"aaa"<br/><span class="label">dev:</span><span class="value-default"><i>default</i></span><br/><span class="label">test:</span><span class="value-default"><i>default</i></span></td></tr>"""
 				)
 			)
 		}

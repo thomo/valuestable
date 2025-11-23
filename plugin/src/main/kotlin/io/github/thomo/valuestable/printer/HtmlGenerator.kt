@@ -102,6 +102,16 @@ class HtmlGenerator : Generator {
 				tr.hidden {
 					display: none;
 				}
+				.value-default {
+					opacity: 0.5;
+					font-style: italic;
+				}
+				.value-different {
+					background-color: #fff3cd;
+					padding: 2px 6px;
+					border-radius: 3px;
+					border-left: 3px solid #ffc107;
+				}
 			</style>
 			<script>
 				function filterTable() {
@@ -167,12 +177,28 @@ class HtmlGenerator : Generator {
 	fun generateTableRow(key: String, collector: ValueCollector): String {
 		val names = collector.getNames()
 		val formattedKey = key.replace(".", "<wbr>.")
+		val values = collector.getValues(key)
+		val defaultValue = values.firstOrNull()
+		
 		return "<td><code>$formattedKey</code></td><td class=\"value-cell\">" +
-			collector.getValues(key)
-				.mapIndexed { index, v -> 
-					"<span class=\"label\">${names[index]}:</span>" + ValueFormatter.format(v, index, true) 
+			values.mapIndexed { index, v -> 
+				val formattedValue = ValueFormatter.format(v, index, true)
+				val cssClass = when {
+					v == null -> "value-default"  // Using default placeholder
+					index == 0 -> ""  // Default value itself, no special styling
+					v != defaultValue -> "value-different"  // Different from default
+					else -> ""  // Same as default, normal styling
 				}
-				.joinToString("<br/>", postfix = "</td>")
+				
+				val wrappedValue = if (cssClass.isNotEmpty()) {
+					"<span class=\"$cssClass\">$formattedValue</span>"
+				} else {
+					formattedValue
+				}
+				
+				"<span class=\"label\">${names[index]}:</span>" + wrappedValue
+			}
+			.joinToString("<br/>", postfix = "</td>")
 	}
 
 	override fun fileExtension() = "html"
