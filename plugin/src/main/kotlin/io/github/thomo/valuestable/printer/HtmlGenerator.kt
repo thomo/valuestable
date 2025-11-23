@@ -30,15 +30,24 @@ class HtmlGenerator : Generator {
 					margin: 0;
 					padding: 20px;
 				}
-				h1 {
-					color: var(--primary-color);
+				.header-container {
+					display: flex;
+					justify-content: space-between;
+					align-items: flex-end;
 					border-bottom: 2px solid var(--primary-color);
 					padding-bottom: 10px;
+					margin-bottom: 20px;
+				}
+				h1 {
+					color: var(--primary-color);
+					margin: 0;
+					padding: 0;
 				}
 				.meta {
 					color: #6c757d;
 					font-size: 0.9em;
-					margin-bottom: 20px;
+					margin: 0;
+					text-align: right;
 				}
 				table {
 					width: 100%;
@@ -158,9 +167,12 @@ class HtmlGenerator : Generator {
 			</head>
 			<body>
 			""".trimIndent(),
+		"<div class=\"header-container\">",
 		"<h1>Values Overview</h1>",
 		"<p class=\"meta\">Generated at " + LocalDateTime.now()
-			.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "</p>",
+			.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + 
+			" | <a href=\"https://github.com/thomo/valuestable\" target=\"_blank\" rel=\"noopener\">ValuesTable Plugin</a></p>",
+		"</div>",
 		"<div class=\"filter-container\">",
 		"<input type=\"text\" id=\"filterInput\" class=\"filter-input\" placeholder=\"Filter by key or value...\" onkeyup=\"filterTable()\">",
 		"<span id=\"rowCount\" class=\"row-count\"></span>",
