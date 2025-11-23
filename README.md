@@ -81,6 +81,21 @@ Generate the report by running the `valuesTable` task:
 ./gradlew valuesTable
 ```
 
+### Filtering Environments
+
+You can restrict the output to specific environments using the `-Penvs` parameter. The `default` environment is always included.
+
+```bash
+# Include only default and dev environments
+./gradlew valuesTable -Penvs=dev
+
+# Include default, dev, and test environments
+./gradlew valuesTable -Penvs=dev,test
+
+# Include all environments (no filter)
+./gradlew valuesTable
+```
+
 Output:
 ```text
 > Task :valuesTable

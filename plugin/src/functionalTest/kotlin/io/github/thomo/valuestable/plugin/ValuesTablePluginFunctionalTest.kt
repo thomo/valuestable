@@ -57,11 +57,11 @@ class ValuesTablePluginFunctionalTest {
 		}
 	}
 
-	private fun runGradle(arg: String) = GradleRunner
+	private fun runGradle(vararg args: String) = GradleRunner
 		.create()
 		.forwardOutput()
 		.withPluginClasspath()
-		.withArguments(arg)
+		.withArguments(*args)
 		.withProjectDir(getProjectDir())
 		.build()
 
@@ -254,5 +254,42 @@ class ValuesTablePluginFunctionalTest {
 			assertThat(lines, hasItem("""|root<wbr>.c|default: "ccc"<br/>test: "xTest"<br/>dev: *default*|"""))
 		}
 
+	}
+
+	@Nested
+	inner class EnvFiltering {
+		@Test
+		fun `should filter to single environment plus default`() {
+			val result = runGradle("valuesTable", "-Penvs=dev")
+
+			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines()
+			
+			// Should include default and dev, but not test
+			assertThat(lines, hasItem("|root<wbr>.a|default: \"aaa\"<br/>dev: *default*|"))
+			// Should NOT include test environment
+			assertFalse(lines.any { it.contains("test:") })
+		}
+
+		@Test
+		fun `should filter to multiple environments plus default`() {
+			val result = runGradle("valuesTable", "-Penvs=dev,test")
+
+			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines()
+			
+			// Should include default, dev, and test
+			assertThat(lines, hasItem("|root<wbr>.a|default: \"aaa\"<br/>test: *default*<br/>dev: *default*|"))
+		}
+
+		@Test
+		fun `should always include default even when not specified`() {
+			val result = runGradle("valuesTable", "-Penvs=test")
+
+			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines()
+			
+			// Should include default and test, but not dev
+			assertThat(lines, hasItem("|root<wbr>.c|default: \"ccc\"<br/>test: \"cTest\"|"))
+			// Should NOT include dev environment
+			assertFalse(lines.any { it.contains("dev:") })
+		}
 	}
 }

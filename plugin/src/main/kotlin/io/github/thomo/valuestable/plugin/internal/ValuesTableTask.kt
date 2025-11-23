@@ -28,6 +28,9 @@ open class ValuesTableTask : DefaultTask() {
 	@Input
 	val sources: ListProperty<NamedFile> = project.objects.listProperty(NamedFile::class.java)
 
+	@Input
+	val envs: Property<String> = project.objects.property(String::class.java)
+
 	@InputFiles
 	@PathSensitive(PathSensitivity.RELATIVE)
 	fun getInputFiles(): List<File> {
@@ -66,11 +69,26 @@ open class ValuesTableTask : DefaultTask() {
 
 	private fun collectValues(sources: List<NamedFile>): ValueCollector {
 		val reader = ValueReader()
+		val filteredSources = filterSources(sources)
 		return ValueCollector().apply {
-			sources.forEach { src ->
+			filteredSources.forEach { src ->
 				this.add(src.name, reader.read(project.projectDir.toPath().resolve(src.file)))
 			}
 		}
+	}
+
+	private fun filterSources(sources: List<NamedFile>): List<NamedFile> {
+		val envsValue = envs.getOrElse("")
+		if (envsValue.isEmpty()) {
+			// No filter specified, include all sources
+			return sources
+		}
+
+		val requestedEnvs = envsValue.split(",").map { it.trim() }.toSet()
+		// Always include 'default' plus any requested environments
+		val envsToInclude = requestedEnvs + "default"
+
+		return sources.filter { src -> src.name in envsToInclude }
 	}
 
 }
