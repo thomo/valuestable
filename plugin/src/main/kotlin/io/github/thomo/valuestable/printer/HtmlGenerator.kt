@@ -56,6 +56,7 @@ class HtmlGenerator : Generator {
 					font-weight: 600;
 					position: sticky;
 					top: 0;
+					z-index: 10;
 				}
 				tr:hover {
 					background-color: var(--hover-bg);
