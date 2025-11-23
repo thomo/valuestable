@@ -14,5 +14,15 @@ open class ValuesTableExtension(project: Project) {
 			.path
 	)
 
-	val files: NamedDomainObjectContainer<NamedFile> = project.objects.domainObjectContainer(NamedFile::class.java)
+	val files: NamedDomainObjectContainer<NamedFile> = project.objects.domainObjectContainer(NamedFile::class.java).also { container ->
+		container.whenObjectAdded { file ->
+			fileOrder.add(file.name)
+		}
+	}
+	
+	private val fileOrder = mutableListOf<String>()
+	
+	fun getFilesInOrder(): List<NamedFile> {
+		return fileOrder.mapNotNull { name -> files.findByName(name) }
+	}
 }

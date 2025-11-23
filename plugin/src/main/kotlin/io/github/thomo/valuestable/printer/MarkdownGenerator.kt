@@ -13,6 +13,8 @@ class MarkdownGenerator : Generator {
 		result.add("")
 		result.add("generated at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
 		result.add("")
+		result.add("[ValuesTable Plugin](https://github.com/thomo/valuestable)")
+		result.add("")
 		result.add("|key|values|")
 		result.add("|---|:-----|")
 		keys.forEach { key -> result.add(buildLine(key, collector)) }

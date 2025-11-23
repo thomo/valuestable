@@ -30,15 +30,24 @@ class HtmlGenerator : Generator {
 					margin: 0;
 					padding: 20px;
 				}
-				h1 {
-					color: var(--primary-color);
+				.header-container {
+					display: flex;
+					justify-content: space-between;
+					align-items: flex-end;
 					border-bottom: 2px solid var(--primary-color);
 					padding-bottom: 10px;
+					margin-bottom: 20px;
+				}
+				h1 {
+					color: var(--primary-color);
+					margin: 0;
+					padding: 0;
 				}
 				.meta {
 					color: #6c757d;
 					font-size: 0.9em;
-					margin-bottom: 20px;
+					margin: 0;
+					text-align: right;
 				}
 				table {
 					width: 100%;
@@ -56,6 +65,7 @@ class HtmlGenerator : Generator {
 					font-weight: 600;
 					position: sticky;
 					top: 0;
+					z-index: 10;
 				}
 				tr:hover {
 					background-color: var(--hover-bg);
@@ -102,6 +112,16 @@ class HtmlGenerator : Generator {
 				tr.hidden {
 					display: none;
 				}
+				.value-default {
+					opacity: 0.5;
+					font-style: italic;
+				}
+				.value-different {
+					background-color: #fff3cd;
+					padding: 2px 6px;
+					border-radius: 3px;
+					border-left: 3px solid #ffc107;
+				}
 			</style>
 			<script>
 				function filterTable() {
@@ -147,9 +167,12 @@ class HtmlGenerator : Generator {
 			</head>
 			<body>
 			""".trimIndent(),
+		"<div class=\"header-container\">",
 		"<h1>Values Overview</h1>",
 		"<p class=\"meta\">Generated at " + LocalDateTime.now()
-			.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "</p>",
+			.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + 
+			" | <a href=\"https://github.com/thomo/valuestable\" target=\"_blank\" rel=\"noopener\">ValuesTable Plugin</a></p>",
+		"</div>",
 		"<div class=\"filter-container\">",
 		"<input type=\"text\" id=\"filterInput\" class=\"filter-input\" placeholder=\"Filter by key or value...\" onkeyup=\"filterTable()\">",
 		"<span id=\"rowCount\" class=\"row-count\"></span>",
@@ -167,12 +190,28 @@ class HtmlGenerator : Generator {
 	fun generateTableRow(key: String, collector: ValueCollector): String {
 		val names = collector.getNames()
 		val formattedKey = key.replace(".", "<wbr>.")
+		val values = collector.getValues(key)
+		val defaultValue = values.firstOrNull()
+		
 		return "<td><code>$formattedKey</code></td><td class=\"value-cell\">" +
-			collector.getValues(key)
-				.mapIndexed { index, v -> 
-					"<span class=\"label\">${names[index]}:</span>" + ValueFormatter.format(v, index, true) 
+			values.mapIndexed { index, v -> 
+				val formattedValue = ValueFormatter.format(v, index, true)
+				val cssClass = when {
+					v == null -> "value-default"  // Using default placeholder
+					index == 0 -> ""  // Default value itself, no special styling
+					v != defaultValue -> "value-different"  // Different from default
+					else -> ""  // Same as default, normal styling
 				}
-				.joinToString("<br/>", postfix = "</td>")
+				
+				val wrappedValue = if (cssClass.isNotEmpty()) {
+					"<span class=\"$cssClass\">$formattedValue</span>"
+				} else {
+					formattedValue
+				}
+				
+				"<span class=\"label\">${names[index]}:</span>" + wrappedValue
+			}
+			.joinToString("<br/>", postfix = "</td>")
 	}
 
 	override fun fileExtension() = "html"

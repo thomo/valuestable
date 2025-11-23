@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "io.github.thomo.valuestable.plugin"
-version = "1.4.2"
+version = "1.4.3"
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 	compilerOptions {
