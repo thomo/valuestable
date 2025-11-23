@@ -29,7 +29,10 @@ open class ValuesTableTask : DefaultTask() {
 	val sources: ListProperty<NamedFile> = project.objects.listProperty(NamedFile::class.java)
 
 	@Input
-	val envs: Property<String> = project.objects.property(String::class.java)
+	val vtEnvs: Property<String> = project.objects.property(String::class.java).convention("")
+
+	@Input
+	val vtPath: Property<String> = project.objects.property(String::class.java).convention("")
 
 	@InputFiles
 	@PathSensitive(PathSensitivity.RELATIVE)
@@ -46,6 +49,11 @@ open class ValuesTableTask : DefaultTask() {
 	@TaskAction
 	fun action() {
 		val collector = collectValues(sources.get())
+		// Set path filter if provided
+		val pathValue = vtPath.getOrElse("")
+		if (pathValue.isNotEmpty()) {
+			collector.setPathFilter(pathValue)
+		}
 
 		extracted(collector, createGenerator("markdown"), outputMarkdown.get().asFile)
 		extracted(collector, createGenerator("html"), outputHtml.get().asFile)
@@ -78,7 +86,7 @@ open class ValuesTableTask : DefaultTask() {
 	}
 
 	private fun filterSources(sources: List<NamedFile>): List<NamedFile> {
-		val envsValue = envs.getOrElse("")
+		val envsValue = vtEnvs.getOrElse("")
 		if (envsValue.isEmpty()) {
 			// No filter specified, include all sources
 			return sources

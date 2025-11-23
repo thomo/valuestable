@@ -14,8 +14,13 @@ class ValuesTablePlugin : Plugin<Project> {
 		val ext = project.extensions.create(TASK_NAME, ValuesTableExtension::class.java)
 
 		// Read envs from project property if provided
-		if (project.hasProperty("envs")) {
-			ext.envs.set(project.property("envs") as String)
+		if (project.hasProperty("vtEnvs")) {
+			ext.vtEnvs.set(project.property("vtEnvs") as String)
+		}
+
+		// Read path from project property if provided
+		if (project.hasProperty("vtPath")) {
+			ext.vtPath.set(project.property("vtPath") as String)
 		}
 
 		val task = project.tasks.register(TASK_NAME, ValuesTableTask::class.java).get().apply {
@@ -25,7 +30,8 @@ class ValuesTablePlugin : Plugin<Project> {
 
 		task.format.set(ext.format)
 		task.target.set(ext.target)
-		task.envs.set(ext.envs)
+		task.vtEnvs.set(ext.vtEnvs)
+		task.vtPath.set(ext.vtPath)
 		task.sources.set(project.provider { ext.getFilesInOrder() })
 		task.outputMarkdown.set(task.target.map { path -> project.layout.projectDirectory.file("$path.md") })
 		task.outputHtml.set(task.target.map { path -> project.layout.projectDirectory.file("$path.html") })

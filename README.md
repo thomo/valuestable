@@ -83,17 +83,32 @@ Generate the report by running the `valuesTable` task:
 
 ### Filtering Environments
 
-You can restrict the output to specific environments using the `-Penvs` parameter. The `default` environment is always included.
+You can restrict the output to specific environments using the `-PvtEnvs` parameter. The `default` environment is always included.
 
 ```bash
 # Include only default and dev environments
-./gradlew valuesTable -Penvs=dev
+./gradlew valuesTable -PvtEnvs=dev
 
 # Include default, dev, and test environments
-./gradlew valuesTable -Penvs=dev,test
+./gradlew valuesTable -PvtEnvs=dev,test
 
 # Include all environments (no filter)
 ./gradlew valuesTable
+```
+
+### Filtering by Path
+
+You can restrict the output to keys that start with a specific path using the `-PvtPath` parameter.
+
+```bash
+# Include only keys starting with "root.subkey"
+./gradlew valuesTable -PvtPath=root.subkey
+
+# Include only keys starting with "root"
+./gradlew valuesTable -PvtPath=root
+
+# Combine path and environment filters
+./gradlew valuesTable -PvtPath=root.config -PvtEnvs=dev,test
 ```
 
 Output:

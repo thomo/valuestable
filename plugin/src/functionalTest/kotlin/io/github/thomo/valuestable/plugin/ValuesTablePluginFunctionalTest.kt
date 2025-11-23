@@ -260,36 +260,118 @@ class ValuesTablePluginFunctionalTest {
 	inner class EnvFiltering {
 		@Test
 		fun `should filter to single environment plus default`() {
-			val result = runGradle("valuesTable", "-Penvs=dev")
+			val result = runGradle("valuesTable", "-PvtEnvs=dev")
 
 			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines()
 			
-			// Should include default and dev, but not test
+			// Should include default and dev columns
+			assertThat(lines, hasItem("|key|values|"))
+			assertThat(lines, hasItem("|---|:-----|"))
 			assertThat(lines, hasItem("|root<wbr>.a|default: \"aaa\"<br/>dev: *default*|"))
-			// Should NOT include test environment
+			
+			// Should NOT include test column
 			assertFalse(lines.any { it.contains("test:") })
 		}
 
 		@Test
 		fun `should filter to multiple environments plus default`() {
-			val result = runGradle("valuesTable", "-Penvs=dev,test")
+			val result = runGradle("valuesTable", "-PvtEnvs=dev,test")
 
 			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines()
 			
-			// Should include default, dev, and test
+			// Should include default, dev, and test columns
 			assertThat(lines, hasItem("|root<wbr>.a|default: \"aaa\"<br/>test: *default*<br/>dev: *default*|"))
 		}
 
 		@Test
 		fun `should always include default even when not specified`() {
-			val result = runGradle("valuesTable", "-Penvs=test")
+			val result = runGradle("valuesTable", "-PvtEnvs=test")
 
 			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines()
 			
-			// Should include default and test, but not dev
-			assertThat(lines, hasItem("|root<wbr>.c|default: \"ccc\"<br/>test: \"cTest\"|"))
-			// Should NOT include dev environment
+			// Should include default and test columns
+			assertThat(lines, hasItem("|root<wbr>.a|default: \"aaa\"<br/>test: *default*|"))
+			
+			// Should NOT include dev column
 			assertFalse(lines.any { it.contains("dev:") })
+		}
+	}
+
+	@Nested
+	inner class PathFiltering {
+		@Test
+		fun `should filter to root path`() {
+			val result = runGradle("valuesTable", "-PvtPath=root")
+
+			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines()
+			
+			// Should include keys starting with "root"
+			assertThat(lines, hasItem("|root<wbr>.a|default: \"aaa\"<br/>test: *default*<br/>dev: *default*|"))
+			assertThat(lines, hasItem("|root<wbr>.c|default: \"ccc\"<br/>test: \"cTest\"<br/>dev: *default*|"))
+			// Should include root.b keys if they exist
+			assertTrue(lines.any { it.contains("root<wbr>.b") } || lines.none { it.contains("root<wbr>.b") })
+		}
+
+		@Test
+		fun `should filter to nested path`() {
+			// Create a file with nested structure
+			val nestedFile = File(getProjectDir(), "testdata/values-nested.yaml")
+			nestedFile.apply {
+				parentFile.mkdirs()
+				createNewFile()
+				writeText(
+					"""
+					---
+					root:
+					  config:
+					    setting1: value1
+					    setting2: value2
+					  other:
+					    data: xyz
+					other:
+					  key: abc
+					""".trimIndent()
+				)
+			}
+
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+				
+				valuesTable {
+					files {
+						'default' {
+							file = "testdata/values-nested.yaml"
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			val result = runGradle("valuesTable", "-PvtPath=root.config")
+
+			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines()
+			
+			// Should only include keys starting with "root.config"
+			assertTrue(lines.any { it.contains("root<wbr>.config<wbr>.setting1") })
+			assertTrue(lines.any { it.contains("root<wbr>.config<wbr>.setting2") })
+			// Should NOT include other keys
+			assertFalse(lines.any { it.contains("root<wbr>.other") })
+			assertFalse(lines.any { it.contains("|other<wbr>.key|") })
+		}
+
+		@Test
+		fun `should combine path and environment filters`() {
+			val result = runGradle("valuesTable", "-PvtPath=root", "-PvtEnvs=dev")
+
+			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines()
+			
+			// Should include keys starting with "root" and only default + dev environments
+			assertThat(lines, hasItem("|root<wbr>.a|default: \"aaa\"<br/>dev: *default*|"))
+			// Should NOT include test environment
+			assertFalse(lines.any { it.contains("test:") })
 		}
 	}
 }

@@ -14,7 +14,9 @@ open class ValuesTableExtension(project: Project) {
 			.path
 	)
 
-	val envs: Property<String> = project.objects.property(String::class.java).convention("")
+	val vtEnvs: Property<String> = project.objects.property(String::class.java).convention("")
+
+	val vtPath: Property<String> = project.objects.property(String::class.java).convention("")
 
 	val files: NamedDomainObjectContainer<NamedFile> = project.objects.domainObjectContainer(NamedFile::class.java).also { container ->
 		container.whenObjectAdded { file ->
