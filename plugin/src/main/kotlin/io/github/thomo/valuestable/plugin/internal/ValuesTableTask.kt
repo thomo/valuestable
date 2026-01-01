@@ -61,7 +61,7 @@ open class ValuesTableTask : DefaultTask() {
 
 	private fun extracted(collector: ValueCollector, generator: Generator, file: File) {
 		writeOutput(generator.generate(collector), file)
-		println("Overview generated at ${file.absolutePath}")
+		println("Overview generated at file://${file.absolutePath}")
 	}
 
 	private fun createGenerator(format: String) = when (format) {

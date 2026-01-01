@@ -114,8 +114,8 @@ You can restrict the output to keys that start with a specific path using the `-
 Output:
 ```text
 > Task :valuesTable
-Overview generated at /path/to/project/build/valuesTable/overview.md
-Overview generated at /path/to/project/build/valuesTable/overview.html
+Overview generated at file:///path/to/project/build/valuesTable/overview.md
+Overview generated at file:///path/to/project/build/valuesTable/overview.html
 
 BUILD SUCCESSFUL in 1s
 1 actionable task: 1 executed
