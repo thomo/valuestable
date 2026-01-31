@@ -15,7 +15,7 @@ Generates an overview of Helm values in Markdown and HTML format. The report fil
 
 ```kotlin
 plugins {
-  id("io.github.thomo.valuestable") version "1.4.2"
+  id("io.github.thomo.valuestable") version "1.5.1"
 }
 ```
 
@@ -23,7 +23,7 @@ plugins {
 
 ```groovy
 plugins {
-  id "io.github.thomo.valuestable" version "1.4.2"
+  id "io.github.thomo.valuestable" version "1.5.1"
 }
 ```
 
