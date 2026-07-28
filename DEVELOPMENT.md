@@ -5,7 +5,7 @@ This guide provides information for developers working on the ValuesTable Gradle
 ## Prerequisites
 
 - Java 21 or higher
-- Gradle 8.x (wrapper included)
+- Gradle 9.x (wrapper included)
 
 ## Project Structure
 
@@ -66,10 +66,10 @@ Then in another project's `settings.gradle.kts`, add:
 
 ```kotlin
 pluginManagement {
-    repositories {
-        mavenLocal()
-        gradlePluginPortal()
-    }
+	repositories {
+		mavenLocal()
+		gradlePluginPortal()
+	}
 }
 ```
 
@@ -77,7 +77,7 @@ And use the plugin:
 
 ```kotlin
 plugins {
-    id("io.github.thomo.valuestable") version "1.4.2"
+	id("io.github.thomo.valuestable") version "1.6.0"
 }
 ```
 
@@ -93,7 +93,7 @@ Then apply the plugin normally:
 
 ```kotlin
 plugins {
-    id("io.github.thomo.valuestable")
+	id("io.github.thomo.valuestable")
 }
 ```
 

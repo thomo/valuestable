@@ -4,6 +4,7 @@ import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.hasItem
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -64,6 +65,14 @@ class ValuesTablePluginFunctionalTest {
 		.withArguments(*args)
 		.withProjectDir(getProjectDir())
 		.build()
+
+	private fun runGradleAndFail(vararg args: String) = GradleRunner
+		.create()
+		.forwardOutput()
+		.withPluginClasspath()
+		.withArguments(*args)
+		.withProjectDir(getProjectDir())
+		.buildAndFail()
 
 	@BeforeEach
 	fun setUp() {
@@ -212,6 +221,74 @@ class ValuesTablePluginFunctionalTest {
 			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
 
 			assertTrue(File(tempFolder, DEFAULT_TARGET_HTML).exists())
+		}
+	}
+
+	@Nested
+	inner class FormatRestriction {
+
+		@Test
+		fun `default generates both markdown and html`() {
+			getBuildFile().writeText(BuildFileGenerator().build())
+
+			runGradle("valuesTable")
+
+			assertTrue(File(tempFolder, DEFAULT_TARGET_MARKDOWN).exists())
+			assertTrue(File(tempFolder, DEFAULT_TARGET_HTML).exists())
+		}
+
+		@Test
+		fun `format html only generates the html file`() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					format = "html"
+
+					files {
+						'default' {
+							file = "testdata/values.yaml"
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			val result = runGradle("valuesTable")
+
+			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+			assertTrue(File(tempFolder, DEFAULT_TARGET_HTML).exists())
+			assertFalse(File(tempFolder, DEFAULT_TARGET_MARKDOWN).exists())
+		}
+
+		@Test
+		fun `format markdown only generates the markdown file`() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					format = "markdown"
+
+					files {
+						'default' {
+							file = "testdata/values.yaml"
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			val result = runGradle("valuesTable")
+
+			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+			assertTrue(File(tempFolder, DEFAULT_TARGET_MARKDOWN).exists())
+			assertFalse(File(tempFolder, DEFAULT_TARGET_HTML).exists())
 		}
 	}
 
@@ -372,6 +449,517 @@ class ValuesTablePluginFunctionalTest {
 			assertThat(lines, hasItem("|root<wbr>.a|default: \"aaa\"<br/>dev: *default*|"))
 			// Should NOT include test environment
 			assertFalse(lines.any { it.contains("test:") })
+		}
+	}
+
+	@Nested
+	inner class GroupedCharts {
+
+		@Test
+		fun `valuesTable depends on and builds registered charts`() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					target = "testdata/charts"
+
+					charts {
+						serviceA {
+							files {
+								'default' {
+									file = "testdata/values.yaml"
+								}
+								dev {
+									file = "testdata/values-dev.yaml"
+								}
+							}
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			val result = runGradle("valuesTable")
+
+			// The aggregate task itself is skipped (no flat-mode output) - only the chart
+			// sub-task actually generates a report.
+			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SKIPPED))
+			assertThat(result.task(":valuesTableServiceA")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+			assertTrue(File(tempFolder, "testdata/charts/serviceA.md").exists())
+			assertTrue(File(tempFolder, "testdata/charts/serviceA.html").exists())
+			assertFalse(File(tempFolder, "testdata/charts.md").exists())
+			assertFalse(File(tempFolder, "testdata/charts.html").exists())
+		}
+
+		@Test
+		fun `charts default to the build-valuesTable folder when target is not set`() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					charts {
+						serviceA {
+							files {
+								'default' {
+									file = "testdata/values.yaml"
+								}
+							}
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			val result = runGradle("valuesTable")
+
+			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SKIPPED))
+			assertThat(result.task(":valuesTableServiceA")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+			assertTrue(File(tempFolder, "build/valuesTable/serviceA.md").exists())
+			assertTrue(File(tempFolder, "build/valuesTable/serviceA.html").exists())
+			// No leftover "overview" folder/files from the flat-mode default target.
+			assertFalse(File(tempFolder, "build/valuesTable/overview.md").exists())
+			assertFalse(File(tempFolder, "build/valuesTable/overview").exists())
+		}
+
+		@Test
+		fun `chart task can be run standalone`() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					target = "testdata/charts"
+
+					charts {
+						serviceA {
+							files {
+								'default' {
+									file = "testdata/values.yaml"
+								}
+							}
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			val result = runGradle("valuesTableServiceA")
+
+			assertThat(result.task(":valuesTableServiceA")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+			assertTrue(File(tempFolder, "testdata/charts/serviceA.md").exists())
+		}
+
+		@Test
+		fun `each chart is named after its registration name under the shared target folder`() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					target = "testdata/charts"
+
+					charts {
+						serviceA {
+							files {
+								'default' {
+									file = "testdata/values.yaml"
+								}
+							}
+						}
+						serviceB {
+							files {
+								'default' {
+									file = "testdata/values-dev.yaml"
+								}
+							}
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			val result = runGradle("valuesTable")
+
+			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SKIPPED))
+			assertTrue(File(tempFolder, "testdata/charts/serviceA.md").exists())
+			assertTrue(File(tempFolder, "testdata/charts/serviceB.md").exists())
+		}
+
+		@Test
+		fun `-PvtCharts restricts valuesTable to the selected charts`() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					target = "testdata/charts"
+
+					charts {
+						serviceA {
+							files {
+								'default' {
+									file = "testdata/values.yaml"
+								}
+							}
+						}
+						serviceB {
+							files {
+								'default' {
+									file = "testdata/values-dev.yaml"
+								}
+							}
+						}
+						serviceC {
+							files {
+								'default' {
+									file = "testdata/values-test.yaml"
+								}
+							}
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			val result = runGradle("valuesTable", "-PvtCharts=serviceB,serviceC")
+
+			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SKIPPED))
+			assertNull(result.task(":valuesTableServiceA"))
+			assertThat(result.task(":valuesTableServiceB")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+			assertThat(result.task(":valuesTableServiceC")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+
+			assertFalse(File(tempFolder, "testdata/charts/serviceA.md").exists())
+			assertTrue(File(tempFolder, "testdata/charts/serviceB.md").exists())
+			assertTrue(File(tempFolder, "testdata/charts/serviceC.md").exists())
+		}
+
+		@Test
+		fun `-PvtCharts does not block running an unselected chart standalone`() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					target = "testdata/charts"
+
+					charts {
+						serviceA {
+							files {
+								'default' {
+									file = "testdata/values.yaml"
+								}
+							}
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			val result = runGradle("valuesTableServiceA", "-PvtCharts=serviceB")
+
+			assertThat(result.task(":valuesTableServiceA")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+			assertTrue(File(tempFolder, "testdata/charts/serviceA.md").exists())
+		}
+
+		@Test
+		fun `fails when both top-level files and charts are configured`() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					files {
+						'default' {
+							file = "testdata/values.yaml"
+						}
+					}
+					charts {
+						serviceA {
+							files {
+								'default' {
+									file = "testdata/values.yaml"
+								}
+							}
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			val result = runGradleAndFail("valuesTable")
+
+			assertThat(result.output, containsString("configure sources via either"))
+		}
+
+		@Test
+		fun `old syntax alone is unaffected by the charts feature`() {
+			getBuildFile().writeText(BuildFileGenerator().build())
+
+			val result = runGradle("valuesTable")
+
+			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+			assertNull(result.task(":valuesTableServiceA"))
+			assertTrue(File(tempFolder, DEFAULT_TARGET_MARKDOWN).exists())
+		}
+	}
+
+	@Nested
+	inner class MergedCharts {
+
+		@BeforeEach
+		internal fun setUp() {
+			// serviceA only knows about root.a/root.c; serviceB only knows about root.b/root.c
+			// (with a null root.c), so the merged table must show the union of keys and leave
+			// serviceB's root.a / serviceA's root.b cells empty.
+			createDefaultValueFile(File(getProjectDir(), "testdata/serviceA/values.yaml"))
+			createValuesFile(File(getProjectDir(), "testdata/serviceB/values.yaml"), "bDev", "")
+
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					target = "testdata/merged"
+					mergeCharts = true
+
+					charts {
+						serviceA {
+							files {
+								'default' {
+									file = "testdata/serviceA/values.yaml"
+								}
+							}
+						}
+						serviceB {
+							files {
+								'default' {
+									file = "testdata/serviceB/values.yaml"
+								}
+							}
+						}
+					}
+				}
+				""".trimIndent()
+			)
+		}
+
+		@Test
+		fun `valuesTable produces a single merged report instead of per-chart sub-tasks`() {
+			val result = runGradle("valuesTable")
+
+			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+			assertNull(result.task(":valuesTableServiceA"))
+			assertNull(result.task(":valuesTableServiceB"))
+
+			assertTrue(File(tempFolder, "testdata/merged.md").exists())
+			assertTrue(File(tempFolder, "testdata/merged.html").exists())
+			assertFalse(File(tempFolder, "testdata/serviceA.md").exists())
+			assertFalse(File(tempFolder, "testdata/serviceB.md").exists())
+		}
+
+		@Test
+		fun `merged markdown table has one column per chart and the union of their keys`() {
+			runGradle("valuesTable")
+
+			val lines = File(tempFolder, "testdata/merged.md").readLines()
+
+			assertThat(lines, hasItem("|key|serviceA|serviceB|"))
+			// serviceA has no root.b at all -> empty cell.
+			assertThat(lines, hasItem("""|root<wbr>.a|default: "aaa"||"""))
+			assertThat(lines, hasItem("""|root<wbr>.b||default: "bDev"|"""))
+			// serviceB has root.c but its value is null -> "(n.d.)", not an empty cell.
+			assertThat(lines, hasItem("""|root<wbr>.c|default: "ccc"|default: *(n.d.)*|"""))
+		}
+
+		@Test
+		fun `merged html table has one column per chart`() {
+			runGradle("valuesTable")
+
+			val lines = File(tempFolder, "testdata/merged.html").readLines()
+
+			assertThat(lines, hasItem("<thead><tr><th>Key</th><th>serviceA</th><th>serviceB</th></tr></thead>"))
+		}
+
+		@Test
+		fun `merged column order follows registration order, not alphabetical order`() {
+			// "zulu" sorts after "alpha" alphabetically but is registered first - the merged
+			// report's columns must follow registration order.
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					target = "testdata/merged"
+					mergeCharts = true
+
+					charts {
+						zulu {
+							files {
+								'default' {
+									file = "testdata/serviceA/values.yaml"
+								}
+							}
+						}
+						alpha {
+							files {
+								'default' {
+									file = "testdata/serviceB/values.yaml"
+								}
+							}
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			runGradle("valuesTable")
+
+			val mdLines = File(tempFolder, "testdata/merged.md").readLines()
+			assertThat(mdLines, hasItem("|key|zulu|alpha|"))
+
+			val htmlLines = File(tempFolder, "testdata/merged.html").readLines()
+			assertThat(htmlLines, hasItem("<thead><tr><th>Key</th><th>zulu</th><th>alpha</th></tr></thead>"))
+		}
+
+		@Test
+		fun `chart sub-tasks can still be run standalone when merged`() {
+			val result = runGradle("valuesTableServiceA")
+
+			assertThat(result.task(":valuesTableServiceA")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+			assertTrue(File(tempFolder, "testdata/merged/serviceA.md").exists())
+		}
+
+		@Test
+		fun `-PvtCharts restricts the merged report to the selected charts`() {
+			val result = runGradle("valuesTable", "-PvtCharts=serviceB")
+
+			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+
+			val mdLines = File(tempFolder, "testdata/merged.md").readLines()
+			assertThat(mdLines, hasItem("|key|serviceB|"))
+
+			val htmlLines = File(tempFolder, "testdata/merged.html").readLines()
+			assertThat(htmlLines, hasItem("<thead><tr><th>Key</th><th>serviceB</th></tr></thead>"))
+		}
+	}
+
+	@Nested
+	inner class LineWrapping {
+
+		private val longValue = "x".repeat(100)
+
+		private fun createLongValueFile(file: File) {
+			file.apply {
+				parentFile.mkdirs()
+				createNewFile()
+				writeText(
+					"""
+						---
+						root:
+					    long: $longValue
+					""".trimIndent()
+				)
+			}
+		}
+
+		private fun buildFile(wrapLine: String) = """
+			plugins {
+				id('io.github.thomo.valuestable')
+			}
+
+			valuesTable {
+				$wrapLine
+				files {
+					'default' {
+						file = "testdata/long.yaml"
+					}
+				}
+			}
+			""".trimIndent()
+
+		private fun readMarkdownCell(): String {
+			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines()
+			val valueLine = lines.first { it.startsWith("|root<wbr>.long|") }
+			return valueLine.removePrefix("|root<wbr>.long|default: ").removeSuffix("|")
+		}
+
+		@BeforeEach
+		internal fun setUp() {
+			createLongValueFile(File(getProjectDir(), "testdata/long.yaml"))
+		}
+
+		@Test
+		fun `long values are wrapped every 80 characters by default`() {
+			getBuildFile().writeText(buildFile(""))
+
+			runGradle("valuesTable")
+
+			val cellContent = readMarkdownCell()
+			val quotedValue = "\"$longValue\""
+
+			// content is preserved, just with break opportunities inserted
+			assertEquals(quotedValue, cellContent.replace("<wbr>", ""))
+			// one break for a 102-char quoted value wrapped at 80
+			val segments = cellContent.split("<wbr>")
+			assertEquals(2, segments.size)
+			assertEquals(80, segments[0].length)
+		}
+
+		@Test
+		fun `wrap = 0 disables wrapping`() {
+			getBuildFile().writeText(buildFile("wrap = 0"))
+
+			runGradle("valuesTable")
+
+			val cellContent = readMarkdownCell()
+
+			assertEquals("\"$longValue\"", cellContent)
+			assertFalse(cellContent.contains("<wbr>"))
+		}
+
+		@Test
+		fun `wrap width is configurable`() {
+			getBuildFile().writeText(buildFile("wrap = 10"))
+
+			runGradle("valuesTable")
+
+			val cellContent = readMarkdownCell()
+			val segments = cellContent.split("<wbr>")
+
+			assertTrue(segments.size > 2)
+			segments.dropLast(1).forEach { assertEquals(10, it.length) }
+		}
+
+		@Test
+		fun `long values are wrapped in html output too`() {
+			getBuildFile().writeText(buildFile(""))
+
+			runGradle("valuesTable")
+
+			val lines = File(tempFolder, DEFAULT_TARGET_HTML).readLines()
+			val valueLine = lines.first { it.contains("root<wbr>.long") }
+
+			assertTrue(valueLine.contains("<wbr>"))
 		}
 	}
 }

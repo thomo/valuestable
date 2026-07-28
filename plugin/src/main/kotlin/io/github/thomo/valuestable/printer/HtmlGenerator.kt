@@ -4,15 +4,30 @@ import io.github.thomo.valuestable.model.ValueCollector
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-class HtmlGenerator : Generator {
-	override fun generate(collector: ValueCollector) = mutableListOf(
+class HtmlGenerator(private val name: String? = null, private val wrap: Int = 0) : Generator {
+	private val title = if (name.isNullOrBlank()) "Values Overview" else "Values Overview '$name'"
+
+	override fun generate(collector: ValueCollector) = pageShell() +
+		generateTableHead() + "<tbody>" + generateTableRows(collector) +
+		"</tbody></table></body></html>"
+
+	override fun generateMerged(charts: List<Pair<String, ValueCollector>>): List<String> {
+		val keySets = charts.map { (_, vc) -> vc.keys().toSet() }
+		val globalKeys = keySets.flatten().toSet().sorted()
+
+		return pageShell() +
+			generateMergedTableHead(charts) + "<tbody>" + generateMergedTableRows(globalKeys, charts, keySets) +
+			"</tbody></table></body></html>"
+	}
+
+	private fun pageShell() = mutableListOf(
 		"""
 			<!DOCTYPE html>
 			<html lang="en">
 			<head>
 			<meta charset="UTF-8">
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-			<title>Values Overview</title>
+			<title>$title</title>
 			<style>
 				:root {
 					--primary-color: #007bff;
@@ -168,7 +183,7 @@ class HtmlGenerator : Generator {
 			<body>
 			""".trimIndent(),
 		"<div class=\"header-container\">",
-		"<h1>Values Overview</h1>",
+		"<h1>$title</h1>",
 		"<p class=\"meta\">Generated at " + LocalDateTime.now()
 			.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + 
 			" | <a href=\"https://github.com/thomo/valuestable\" target=\"_blank\" rel=\"noopener\">ValuesTable Plugin</a></p>",
@@ -178,8 +193,7 @@ class HtmlGenerator : Generator {
 		"<span id=\"rowCount\" class=\"row-count\"></span>",
 		"</div>",
 		"<table id=\"valuesTable\">"
-	) + generateTableHead() + "<tbody>" + generateTableRows(collector) +
-		"</tbody></table></body></html>"
+	)
 
 	fun generateTableHead() =
 		"<thead><tr><th>Key</th><th>Values</th></tr></thead>"
@@ -188,30 +202,50 @@ class HtmlGenerator : Generator {
 		collector.keys().map { key -> "<tr>" + generateTableRow(key, collector) + "</tr>" }
 
 	fun generateTableRow(key: String, collector: ValueCollector): String {
-		val names = collector.getNames()
 		val formattedKey = key.replace(".", "<wbr>.")
+		return "<td><code>$formattedKey</code></td><td class=\"value-cell\">" + buildValueCellContent(key, collector) + "</td>"
+	}
+
+	private fun generateMergedTableHead(charts: List<Pair<String, ValueCollector>>) =
+		"<thead><tr><th>Key</th>" + charts.joinToString("") { (name, _) -> "<th>$name</th>" } + "</tr></thead>"
+
+	private fun generateMergedTableRows(
+		keys: List<String>,
+		charts: List<Pair<String, ValueCollector>>,
+		keySets: List<Set<String>>
+	) = keys.map { key -> "<tr>" + generateMergedTableRow(key, charts, keySets) + "</tr>" }
+
+	private fun generateMergedTableRow(key: String, charts: List<Pair<String, ValueCollector>>, keySets: List<Set<String>>): String {
+		val formattedKey = key.replace(".", "<wbr>.")
+		val cells = charts.mapIndexed { index, (_, vc) ->
+			val content = if (key in keySets[index]) buildValueCellContent(key, vc) else ""
+			"<td class=\"value-cell\">$content</td>"
+		}
+		return "<td><code>$formattedKey</code></td>" + cells.joinToString("")
+	}
+
+	private fun buildValueCellContent(key: String, collector: ValueCollector): String {
+		val names = collector.getNames()
 		val values = collector.getValues(key)
 		val defaultValue = values.firstOrNull()
-		
-		return "<td><code>$formattedKey</code></td><td class=\"value-cell\">" +
-			values.mapIndexed { index, v -> 
-				val formattedValue = ValueFormatter.format(v, index, true)
-				val cssClass = when {
-					v == null -> "value-default"  // Using default placeholder
-					index == 0 -> ""  // Default value itself, no special styling
-					v != defaultValue -> "value-different"  // Different from default
-					else -> ""  // Same as default, normal styling
-				}
-				
-				val wrappedValue = if (cssClass.isNotEmpty()) {
-					"<span class=\"$cssClass\">$formattedValue</span>"
-				} else {
-					formattedValue
-				}
-				
-				"<span class=\"label\">${names[index]}:</span>" + wrappedValue
+
+		return values.mapIndexed { index, v ->
+			val formattedValue = ValueFormatter.format(v, index, true, wrap)
+			val cssClass = when {
+				v == null -> "value-default"  // Using default placeholder
+				index == 0 -> ""  // Default value itself, no special styling
+				v != defaultValue -> "value-different"  // Different from default
+				else -> ""  // Same as default, normal styling
 			}
-			.joinToString("<br/>", postfix = "</td>")
+
+			val wrappedValue = if (cssClass.isNotEmpty()) {
+				"<span class=\"$cssClass\">$formattedValue</span>"
+			} else {
+				formattedValue
+			}
+
+			"<span class=\"label\">${names[index]}:</span>" + wrappedValue
+		}.joinToString("<br/>")
 	}
 
 	override fun fileExtension() = "html"
