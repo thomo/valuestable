@@ -1,5 +1,3 @@
-@file:Suppress("UNUSED_VARIABLE")
-
 plugins {
 	id("java-gradle-plugin")
 	alias(libs.plugins.kotlin.jvm)
@@ -8,7 +6,7 @@ plugins {
 }
 
 group = "io.github.thomo.valuestable.plugin"
-version = "1.5.2"
+version = "1.6.0"
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 	compilerOptions {
@@ -27,19 +25,19 @@ repositories {
 
 dependencies {
 	implementation(platform(libs.kotlin.bom))
-	implementation(libs.kotlin.stdlib)
 
 	implementation(libs.jackson.yaml)
 	implementation(libs.jackson.kotlin)
 
 	testImplementation(libs.kotlin.test)
 	testImplementation(libs.hamcrest)
+	testImplementation(gradleTestKit())
 }
 
 gradlePlugin {
 	website.set("https://github.com/thomo/valuestable")
 	vcsUrl.set("https://github.com/thomo/valuestable.git")
-	val valuesTable by plugins.creating {
+	plugins.create("valuesTable") {
 		id = "io.github.thomo.valuestable"
 		displayName = "Plugin to create a table of defined helm values"
 		description = "Creates an overview of helm values defined in multiple files"
@@ -52,7 +50,7 @@ val functionalTestSourceSet = sourceSets.create("functionalTest") {}
 
 configurations["functionalTestImplementation"].extendsFrom(configurations["testImplementation"])
 
-val functionalTest by tasks.registering(Test::class) {
+val functionalTest = tasks.register<Test>("functionalTest") {
 	useJUnitPlatform()
 	testClassesDirs = functionalTestSourceSet.output.classesDirs
 	classpath = functionalTestSourceSet.runtimeClasspath
