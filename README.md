@@ -8,7 +8,7 @@ Generates an overview of Helm values in Markdown and HTML format. The report fil
 ## Requirements
 
 - Java 21 or higher
-- Gradle 8.x
+- Gradle 9.x
 
 ## Installation
 
@@ -16,7 +16,7 @@ Generates an overview of Helm values in Markdown and HTML format. The report fil
 
 ```kotlin
 plugins {
-	id("io.github.thomo.valuestable") version "1.5.2"
+	id("io.github.thomo.valuestable") version "<version>"
 }
 ```
 
@@ -24,7 +24,7 @@ plugins {
 
 ```groovy
 plugins {
-    id "io.github.thomo.valuestable" version "1.5.2"
+    id "io.github.thomo.valuestable" version "<version>"
 }
 ```
 
@@ -132,8 +132,8 @@ this feature changes nothing until you opt in.
 
 ### Merging all charts into a single report
 
-If you'd rather have one overview file that compares all charts side by side instead of a separate file per chart,
-set `mergeCharts` alongside `charts { }`:
+If you'd rather have one overview file that compares all charts side by side instead of a separate file per chart, set
+`mergeCharts` alongside `charts { }`:
 
 ```kotlin
 valuesTable {
@@ -155,11 +155,11 @@ valuesTable {
 }
 ```
 
-With `mergeCharts` enabled, `valuesTable` produces a single `<target>.md` / `<target>.html` report instead of
-per-chart files, and the per-chart sub-tasks (`valuesTableServiceA`, etc.) are no longer wired into the `valuesTable`
-task graph — though they still exist and can be run standalone if needed. The report's key column is the union of
-every chart's keys; each chart gets its own column, in the order it was registered, showing the same per-environment
-content it would have in its own report. If a chart has no value at all for a given key, its cell is left empty.
+With `mergeCharts` enabled, `valuesTable` produces a single `<target>.md` / `<target>.html` report instead of per-chart
+files, and the per-chart sub-tasks (`valuesTableServiceA`, etc.) are no longer wired into the `valuesTable`
+task graph — though they still exist and can be run standalone if needed. The report's key column is the union of every
+chart's keys; each chart gets its own column, in the order it was registered, showing the same per-environment content
+it would have in its own report. If a chart has no value at all for a given key, its cell is left empty.
 
 ## Usage
 
@@ -202,8 +202,8 @@ You can restrict the output to keys that start with a specific path using the `-
 
 ### Filtering Charts
 
-When using `charts { }`, you can restrict `valuesTable` to specific charts using the `-PvtCharts` parameter — useful
-for only generating (or merging) the reports you currently need instead of every registered chart.
+When using `charts { }`, you can restrict `valuesTable` to specific charts using the `-PvtCharts` parameter — useful for
+only generating (or merging) the reports you currently need instead of every registered chart.
 
 ```bash
 # Only build the serviceB and serviceC charts (or, with mergeCharts, only include them in the merged report)
