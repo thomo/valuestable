@@ -962,4 +962,137 @@ class ValuesTablePluginFunctionalTest {
 			assertTrue(valueLine.contains("<wbr>"))
 		}
 	}
+
+	@Nested
+	inner class ConfigurationCache {
+
+		// A build with configuration-cache problems fails outright (the default is
+		// `configuration-cache-problems=fail`), so a plain successful `runGradle` call with
+		// `--configuration-cache` already proves the first run stored a clean cache entry. The
+		// second run then must report reusing it rather than re-running configuration.
+		@Test
+		fun `flat mode is configuration-cache compatible`() {
+			runGradle("valuesTable", "--configuration-cache")
+			val result = runGradle("valuesTable", "--configuration-cache")
+
+			assertThat(result.output, containsString("Reusing configuration cache"))
+		}
+
+		@Test
+		fun `charts mode is configuration-cache compatible`() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					target = "testdata/charts"
+
+					charts {
+						serviceA {
+							files {
+								'default' {
+									file = "testdata/values.yaml"
+								}
+							}
+						}
+						serviceB {
+							files {
+								'default' {
+									file = "testdata/values-dev.yaml"
+								}
+							}
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			runGradle("valuesTable", "--configuration-cache")
+			val result = runGradle("valuesTable", "--configuration-cache")
+
+			assertThat(result.output, containsString("Reusing configuration cache"))
+		}
+
+		@Test
+		fun `merged charts mode is configuration-cache compatible`() {
+			createDefaultValueFile(File(getProjectDir(), "testdata/serviceA/values.yaml"))
+			createValuesFile(File(getProjectDir(), "testdata/serviceB/values.yaml"), "bDev", "")
+
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					target = "testdata/merged"
+					mergeCharts = true
+
+					charts {
+						serviceA {
+							files {
+								'default' {
+									file = "testdata/serviceA/values.yaml"
+								}
+							}
+						}
+						serviceB {
+							files {
+								'default' {
+									file = "testdata/serviceB/values.yaml"
+								}
+							}
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			runGradle("valuesTable", "--configuration-cache")
+			val result = runGradle("valuesTable", "--configuration-cache")
+
+			assertThat(result.output, containsString("Reusing configuration cache"))
+		}
+
+		@Test
+		fun `-PvtCharts chart selection is configuration-cache compatible`() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					target = "testdata/charts"
+
+					charts {
+						serviceA {
+							files {
+								'default' {
+									file = "testdata/values.yaml"
+								}
+							}
+						}
+						serviceB {
+							files {
+								'default' {
+									file = "testdata/values-dev.yaml"
+								}
+							}
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			runGradle("valuesTable", "-PvtCharts=serviceB", "--configuration-cache")
+			val result = runGradle("valuesTable", "-PvtCharts=serviceB", "--configuration-cache")
+
+			assertThat(result.output, containsString("Reusing configuration cache"))
+			assertFalse(File(tempFolder, "testdata/charts/serviceA.md").exists())
+			assertTrue(File(tempFolder, "testdata/charts/serviceB.md").exists())
+		}
+	}
 }
