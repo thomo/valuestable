@@ -9,6 +9,8 @@ import io.github.thomo.valuestable.plugin.internal.ValuesTableTask
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 
 class ValuesTablePlugin : Plugin<Project> {
 
@@ -63,14 +65,24 @@ class ValuesTablePlugin : Plugin<Project> {
 		// drives its chart sub-tasks; it must not also run its own flat-mode action against zero
 		// sources, which would otherwise produce an empty, unwanted overview.md/.html alongside
 		// the real reports. With `mergeCharts` it runs its own action to produce the merged report.
-		task.onlyIf("no charts configured, or charts merged into a single report") {
-			ext.charts.isEmpty() || ext.mergeCharts.getOrElse(false)
-		}
+		//
+		// This reads a plain `Property<Boolean>` rather than `ext` directly: `onlyIf` specs are
+		// serialized into the configuration cache, and `ext.charts`'s registration callback below
+		// captures `project` to create sub-tasks -- a `Project` reference the configuration cache
+		// cannot store. `runsOwnAction` is resolved once, after the whole build script evaluates
+		// (see the final `afterEvaluate` block), so only a plain boolean -- not `ext` -- ends up
+		// reachable from the task's `onlyIf`.
+		val runsOwnAction: Property<Boolean> = project.objects.property(Boolean::class.java)
+		task.onlyIf("no charts configured, or charts merged into a single report") { runsOwnAction.get() }
 
 		// Default when `target` isn't set: a folder, so charts land at e.g.
 		// build/valuesTable/serviceA.md rather than nested under an "overview" segment meant for
 		// the flat-mode file basename above.
 		val defaultChartsFolder = project.layout.buildDirectory.dir("valuesTable").map { it.asFile.path }
+
+		// Tracks each chart's sub-task by name so the aggregate task's `dependsOn` (below) can
+		// resolve them without holding a reference to `ext`/`ext.charts` itself.
+		val subTasksByChartName = mutableMapOf<String, ValuesTableTask>()
 
 		// `charts { }` entries are populated after `apply()` runs, while the build script is
 		// evaluated, so register sub-tasks lazily via `all { }` rather than iterating eagerly here.
@@ -80,6 +92,7 @@ class ValuesTablePlugin : Plugin<Project> {
 				this.group = TASK_GROUP
 				this.description = "$TASK_DESCRIPTION (${spec.name})"
 			}
+			subTasksByChartName[spec.name] = subTask
 
 			// The shared `target` is the output folder for chart reports; each chart's files
 			// are named after its registration name within that folder.
@@ -94,19 +107,19 @@ class ValuesTablePlugin : Plugin<Project> {
 			subTask.sources.set(project.provider { spec.getFilesInOrder() })
 			subTask.outputMarkdown.set(subTask.target.map { path -> project.layout.projectDirectory.file("$path.md") })
 			subTask.outputHtml.set(subTask.target.map { path -> project.layout.projectDirectory.file("$path.html") })
-
-			// With `mergeCharts`, the aggregate task renders the merged report itself and must
-			// not also pull in (and run) every per-chart sub-task. Otherwise, only pull in
-			// sub-tasks for charts selected via `-PvtCharts` (all of them when unset).
-			task.dependsOn(project.provider {
-				val charts = ext.vtCharts.getOrElse("")
-				if (ext.mergeCharts.getOrElse(false) || ext.getSelectedChartsInOrder(charts).none { it.name == spec.name }) {
-					emptyList()
-				} else {
-					listOf(subTask)
-				}
-			})
 		}
+
+		// With `mergeCharts`, the aggregate task renders the merged report itself and must not
+		// also pull in (and run) every per-chart sub-task. Otherwise, only pull in sub-tasks for
+		// charts selected via `-PvtCharts` (all of them when unset). `selectedChartNames` is
+		// populated once the whole build script has evaluated (see `afterEvaluate` below); this
+		// provider then resolves it against `subTasksByChartName` -- a plain map of already-created
+		// tasks -- rather than reading `ext` directly, for the same configuration-cache reason as
+		// `runsOwnAction` above.
+		val selectedChartNames: ListProperty<String> = project.objects.listProperty(String::class.java)
+		task.dependsOn(project.provider {
+			selectedChartNames.get().mapNotNull { name -> subTasksByChartName[name] }
+		})
 
 		// Both containers are fully populated only once the build script has finished evaluating,
 		// regardless of which block (`files { }` vs `charts { }`) was written first.
@@ -118,6 +131,16 @@ class ValuesTablePlugin : Plugin<Project> {
 						"entry under `charts { }`, or remove `charts { }` to keep using the top-level `files { }`."
 				)
 			}
+
+			val mergeCharts = ext.mergeCharts.getOrElse(false)
+			runsOwnAction.set(ext.charts.isEmpty() || mergeCharts)
+			selectedChartNames.set(
+				if (mergeCharts) {
+					emptyList()
+				} else {
+					ext.getSelectedChartsInOrder(ext.vtCharts.getOrElse("")).map { it.name }
+				}
+			)
 		}
 	}
 }

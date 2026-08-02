@@ -40,10 +40,12 @@ open class ValuesTableExtension(project: Project) {
 		return fileOrder.mapNotNull { name -> files.findByName(name) }
 	}
 
+	// No custom factory here: the default reflective factory instantiates `ValuesChartSpec` via
+	// its `@Inject` constructor (name + `ObjectFactory`), which keeps `Project` out of the
+	// container's factory closure — a `Project` reference reachable from this container would
+	// break the configuration cache once anything captures `charts` (e.g. `onlyIf`/`dependsOn`).
 	val charts: NamedDomainObjectContainer<ValuesChartSpec> =
-		project.objects.domainObjectContainer(ValuesChartSpec::class.java) { name ->
-			project.objects.newInstance(ValuesChartSpec::class.java, name, project)
-		}.also { container ->
+		project.objects.domainObjectContainer(ValuesChartSpec::class.java).also { container ->
 			container.whenObjectAdded { spec ->
 				chartOrder.add(spec.name)
 			}
