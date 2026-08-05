@@ -14,6 +14,7 @@ import kotlin.test.*
 
 private const val DEFAULT_TARGET_MARKDOWN = "build/valuesTable/overview.md"
 private const val DEFAULT_TARGET_HTML = "build/valuesTable/overview.html"
+private const val DEFAULT_TARGET_JSON = "build/valuesTable/overview.json"
 
 private const val VALUES_DEFAULT_FILENAME = "testdata/values.yaml"
 private const val VALUES_DEV_FILENAME = "testdata/values-dev.yaml"
@@ -179,6 +180,69 @@ class ValuesTablePluginFunctionalTest {
 	}
 
 	@Nested
+	inner class GenerateJson {
+		@BeforeEach
+		internal fun setUp() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					format = "json"
+
+					files {
+						'default' {
+							file = "testdata/values.yaml"
+						}
+						test {
+							file = "testdata/values-test.yaml"
+						}
+						dev {
+							file = "testdata/values-dev.yaml"
+						}
+					}
+				}
+				""".trimIndent()
+			)
+		}
+
+		@Test
+		fun `only generates the json file`() {
+			runGradle("valuesTable")
+
+			assertTrue(File(tempFolder, DEFAULT_TARGET_JSON).exists())
+			assertFalse(File(tempFolder, DEFAULT_TARGET_MARKDOWN).exists())
+			assertFalse(File(tempFolder, DEFAULT_TARGET_HTML).exists())
+		}
+
+		@Test
+		fun `generate value entry of key root-a`() {
+			runGradle("valuesTable")
+
+			val lines = File(tempFolder, DEFAULT_TARGET_JSON).readLines()
+
+			assertThat(lines, hasItem("""    "key" : "root.a","""))
+			assertThat(lines, hasItem("""      "default" : "aaa","""))
+			assertThat(lines, hasItem("""      "test" : null,"""))
+			assertThat(lines, hasItem("""      "dev" : null"""))
+		}
+
+		@Test
+		fun `generate value entry of key root-c`() {
+			runGradle("valuesTable")
+
+			val lines = File(tempFolder, DEFAULT_TARGET_JSON).readLines()
+
+			assertThat(lines, hasItem("""    "key" : "root.c","""))
+			assertThat(lines, hasItem("""      "default" : "ccc","""))
+			assertThat(lines, hasItem("""      "test" : "cTest","""))
+			assertThat(lines, hasItem("""      "dev" : null"""))
+		}
+	}
+
+	@Nested
 	inner class TaskConfig {
 		@Test
 		fun `should create target at specified location`() {
@@ -235,6 +299,7 @@ class ValuesTablePluginFunctionalTest {
 
 			assertTrue(File(tempFolder, DEFAULT_TARGET_MARKDOWN).exists())
 			assertTrue(File(tempFolder, DEFAULT_TARGET_HTML).exists())
+			assertFalse(File(tempFolder, DEFAULT_TARGET_JSON).exists())
 		}
 
 		@Test
@@ -289,6 +354,202 @@ class ValuesTablePluginFunctionalTest {
 			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
 			assertTrue(File(tempFolder, DEFAULT_TARGET_MARKDOWN).exists())
 			assertFalse(File(tempFolder, DEFAULT_TARGET_HTML).exists())
+		}
+
+		@Test
+		fun `format json only generates the json file`() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					format = "json"
+
+					files {
+						'default' {
+							file = "testdata/values.yaml"
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			val result = runGradle("valuesTable")
+
+			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+			assertTrue(File(tempFolder, DEFAULT_TARGET_JSON).exists())
+			assertFalse(File(tempFolder, DEFAULT_TARGET_MARKDOWN).exists())
+			assertFalse(File(tempFolder, DEFAULT_TARGET_HTML).exists())
+		}
+
+		@Test
+		fun `comma-separated format generates exactly the listed formats`() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					format = "html,json"
+
+					files {
+						'default' {
+							file = "testdata/values.yaml"
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			val result = runGradle("valuesTable")
+
+			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+			assertTrue(File(tempFolder, DEFAULT_TARGET_HTML).exists())
+			assertTrue(File(tempFolder, DEFAULT_TARGET_JSON).exists())
+			assertFalse(File(tempFolder, DEFAULT_TARGET_MARKDOWN).exists())
+		}
+
+		@Test
+		fun `comma-separated format tolerates whitespace around entries`() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					format = "markdown, json"
+
+					files {
+						'default' {
+							file = "testdata/values.yaml"
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			val result = runGradle("valuesTable")
+
+			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+			assertTrue(File(tempFolder, DEFAULT_TARGET_MARKDOWN).exists())
+			assertTrue(File(tempFolder, DEFAULT_TARGET_JSON).exists())
+			assertFalse(File(tempFolder, DEFAULT_TARGET_HTML).exists())
+		}
+
+		@Test
+		fun `unsupported format value fails the build`() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					format = "html,xml"
+
+					files {
+						'default' {
+							file = "testdata/values.yaml"
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			val result = runGradleAndFail("valuesTable")
+
+			assertThat(result.output, containsString("Unsupported format specification"))
+		}
+	}
+
+	@Nested
+	inner class FormatCliOverride {
+
+		@BeforeEach
+		internal fun setUp() {
+			// Build script configures html only -- as a human-facing default would -- so the
+			// override below is the only reason a json/markdown file would show up.
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					format = "html"
+
+					files {
+						'default' {
+							file = "testdata/values.yaml"
+						}
+					}
+				}
+				""".trimIndent()
+			)
+		}
+
+		@Test
+		fun `without -PvtFormat the build script's configured format is used`() {
+			val result = runGradle("valuesTable")
+
+			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+			assertTrue(File(tempFolder, DEFAULT_TARGET_HTML).exists())
+			assertFalse(File(tempFolder, DEFAULT_TARGET_JSON).exists())
+		}
+
+		@Test
+		fun `-PvtFormat=json overrides the configured format to generate only json`() {
+			val result = runGradle("valuesTable", "-PvtFormat=json")
+
+			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+			assertTrue(File(tempFolder, DEFAULT_TARGET_JSON).exists())
+			assertFalse(File(tempFolder, DEFAULT_TARGET_HTML).exists())
+		}
+
+		@Test
+		fun `-PvtFormat accepts a comma-separated list to add json alongside html`() {
+			val result = runGradle("valuesTable", "-PvtFormat=html,json")
+
+			assertThat(result.task(":valuesTable")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+			assertTrue(File(tempFolder, DEFAULT_TARGET_HTML).exists())
+			assertTrue(File(tempFolder, DEFAULT_TARGET_JSON).exists())
+			assertFalse(File(tempFolder, DEFAULT_TARGET_MARKDOWN).exists())
+		}
+
+		@Test
+		fun `-PvtFormat also applies to per-chart sub-tasks`() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					target = "testdata/charts"
+					format = "html"
+
+					charts {
+						serviceA {
+							files {
+								'default' {
+									file = "testdata/values.yaml"
+								}
+							}
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			val result = runGradle("valuesTableServiceA", "-PvtFormat=json")
+
+			assertThat(result.task(":valuesTableServiceA")!!.outcome, equalTo(TaskOutcome.SUCCESS))
+			assertTrue(File(tempFolder, "testdata/charts/serviceA.json").exists())
+			assertFalse(File(tempFolder, "testdata/charts/serviceA.html").exists())
 		}
 	}
 
@@ -799,6 +1060,55 @@ class ValuesTablePluginFunctionalTest {
 		}
 
 		@Test
+		fun `merged json report nests chart values under each key`() {
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					target = "testdata/merged"
+					mergeCharts = true
+					format = "json"
+
+					charts {
+						serviceA {
+							files {
+								'default' {
+									file = "testdata/serviceA/values.yaml"
+								}
+							}
+						}
+						serviceB {
+							files {
+								'default' {
+									file = "testdata/serviceB/values.yaml"
+								}
+							}
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			runGradle("valuesTable")
+
+			assertTrue(File(tempFolder, "testdata/merged.json").exists())
+			assertFalse(File(tempFolder, "testdata/merged.md").exists())
+			assertFalse(File(tempFolder, "testdata/merged.html").exists())
+
+			val lines = File(tempFolder, "testdata/merged.json").readLines()
+
+			assertThat(lines, hasItem("""  "charts" : [ "serviceA", "serviceB" ],"""))
+			// serviceA has no root.b at all -> null instead of an object.
+			assertThat(lines, hasItem("""    "key" : "root.b","""))
+			assertThat(lines, hasItem("""      "serviceA" : null,"""))
+			assertThat(lines, hasItem("""      "serviceB" : {"""))
+			assertThat(lines, hasItem("""        "default" : "bDev""""))
+		}
+
+		@Test
 		fun `merged column order follows registration order, not alphabetical order`() {
 			// "zulu" sorts after "alpha" alphabetically but is registered first - the merged
 			// report's columns must follow registration order.
@@ -1093,6 +1403,15 @@ class ValuesTablePluginFunctionalTest {
 			assertThat(result.output, containsString("Reusing configuration cache"))
 			assertFalse(File(tempFolder, "testdata/charts/serviceA.md").exists())
 			assertTrue(File(tempFolder, "testdata/charts/serviceB.md").exists())
+		}
+
+		@Test
+		fun `-PvtFormat override is configuration-cache compatible`() {
+			runGradle("valuesTable", "-PvtFormat=json", "--configuration-cache")
+			val result = runGradle("valuesTable", "-PvtFormat=json", "--configuration-cache")
+
+			assertThat(result.output, containsString("Reusing configuration cache"))
+			assertTrue(File(tempFolder, DEFAULT_TARGET_JSON).exists())
 		}
 	}
 }

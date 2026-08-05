@@ -5,7 +5,9 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Property
 
 open class ValuesTableExtension(project: Project) {
-	val format: Property<String> = project.objects.property(String::class.java).convention("both")
+	// Empty (the default) generates markdown and html. Otherwise a comma-separated list of one
+	// or more of "markdown", "html", "json", e.g. "html,json".
+	val format: Property<String> = project.objects.property(String::class.java).convention("")
 
 	// No convention here: the default differs depending on whether `charts { }` is used, so
 	// each consumer in ValuesTablePlugin supplies its own mode-appropriate fallback.

@@ -60,6 +60,7 @@ class ValuesTablePlugin : Plugin<Project> {
 		})
 		task.outputMarkdown.set(task.target.map { path -> project.layout.projectDirectory.file("$path.md") })
 		task.outputHtml.set(task.target.map { path -> project.layout.projectDirectory.file("$path.html") })
+		task.outputJson.set(task.target.map { path -> project.layout.projectDirectory.file("$path.json") })
 
 		// When `charts { }` is used without `mergeCharts`, the aggregate `valuesTable` task only
 		// drives its chart sub-tasks; it must not also run its own flat-mode action against zero
@@ -107,6 +108,7 @@ class ValuesTablePlugin : Plugin<Project> {
 			subTask.sources.set(project.provider { spec.getFilesInOrder() })
 			subTask.outputMarkdown.set(subTask.target.map { path -> project.layout.projectDirectory.file("$path.md") })
 			subTask.outputHtml.set(subTask.target.map { path -> project.layout.projectDirectory.file("$path.html") })
+			subTask.outputJson.set(subTask.target.map { path -> project.layout.projectDirectory.file("$path.json") })
 		}
 
 		// With `mergeCharts`, the aggregate task renders the merged report itself and must not
@@ -130,6 +132,17 @@ class ValuesTablePlugin : Plugin<Project> {
 						"`charts { }` block, not both. Move existing `files { }` entries into a named " +
 						"entry under `charts { }`, or remove `charts { }` to keep using the top-level `files { }`."
 				)
+			}
+
+			// Applied last (after the build script's own `valuesTable { format = ... }`, if any,
+			// has already run) so a one-off invocation -- e.g. from an agent or CI step -- can force
+			// a different format than the one configured in the build script without editing it,
+			// e.g. `-PvtFormat=json` to get a machine-readable report on demand while the build
+			// script itself still defaults to "html" for everyday human use. Accepts the same
+			// comma-separated syntax as `format`. `ext.format` is bound live into `task.format` /
+			// `subTask.format` above, so overwriting it here still reaches every task.
+			if (project.hasProperty("vtFormat")) {
+				ext.format.set(project.property("vtFormat") as String)
 			}
 
 			val mergeCharts = ext.mergeCharts.getOrElse(false)

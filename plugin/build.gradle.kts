@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "io.github.thomo.valuestable.plugin"
-version = "1.6.1"
+version = "1.6.2"
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 	compilerOptions {
@@ -42,8 +42,8 @@ gradlePlugin {
 	plugins.create("valuesTable") {
 		id = "io.github.thomo.valuestable"
 		displayName = "Plugin to create a condensed overview of Helm values"
-		description = "Creates a Markdown/HTML overview comparing Helm values across environments and charts"
-		tags = listOf("yaml", "helm", "values", "markdown")
+		description = "Creates a Markdown/HTML/JSON overview comparing Helm values across environments and charts"
+		tags = listOf("yaml", "helm", "values", "markdown", "json")
 		implementationClass = "io.github.thomo.valuestable.plugin.ValuesTablePlugin"
 		compatibility {
 			features {
