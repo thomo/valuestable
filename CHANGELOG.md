@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2] - 2026-08-05
+
+### Added
+
+- `json` output format: set `format = "json"` to generate a machine-readable `overview.json` report
+- `format` now accepts a comma-separated list of formats, e.g. `format = "html,json"`, to generate any
+  combination of `markdown`, `html`, and `json` in one run
+- `-PvtFormat` CLI parameter to override the configured `format` for a single invocation, e.g. to force a
+  `json` report on demand without editing the build script
+
+### Removed
+
+- `format = "both"` — leaving `format` unset now has the same effect (generates markdown and html)
+
+## [1.6.1] - 2026-08-02
+
+### Added
+- support gradle configuration cache
+
 ## [1.6.0] - 2026-07-28
 
 ### Added

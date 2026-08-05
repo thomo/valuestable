@@ -3,6 +3,7 @@ package io.github.thomo.valuestable.plugin.internal
 import io.github.thomo.valuestable.model.ValueCollector
 import io.github.thomo.valuestable.plugin.ValueReader
 import io.github.thomo.valuestable.printer.HtmlGenerator
+import io.github.thomo.valuestable.printer.JsonGenerator
 import io.github.thomo.valuestable.printer.MarkdownGenerator
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ProjectLayout
@@ -62,51 +63,73 @@ open class ValuesTableTask @Inject constructor(
 	@OutputFile
 	val outputHtml: RegularFileProperty = project.objects.fileProperty()
 
+	@Optional
+	@OutputFile
+	val outputJson: RegularFileProperty = project.objects.fileProperty()
+
 	@TaskAction
 	fun action() {
 		val chartsValue = chartSources.get()
-		val formatValue = format.getOrElse("both")
-		if (formatValue !in setOf("both", "markdown", "html")) {
-			throw IllegalArgumentException("Unsupported format specification")
-		}
+		val formats = parseFormats(format.getOrElse(""))
 
 		if (chartsValue.isNotEmpty()) {
-			actionMerged(chartsValue, formatValue)
+			actionMerged(chartsValue, formats)
 		} else {
-			actionFlat(formatValue)
+			actionFlat(formats)
 		}
 	}
 
-	private fun actionFlat(formatValue: String) {
+	// Empty means "not specified" -> defaults to markdown + html. Otherwise a comma-separated
+	// list of one or more of "markdown", "html", "json", e.g. "html,json".
+	private fun parseFormats(formatValue: String): Set<String> {
+		if (formatValue.isBlank()) {
+			return setOf("markdown", "html")
+		}
+
+		val requested = formatValue.split(",").map { it.trim() }.toSet()
+		if (requested.any { it !in setOf("markdown", "html", "json") }) {
+			throw IllegalArgumentException("Unsupported format specification")
+		}
+		return requested
+	}
+
+	private fun actionFlat(formats: Set<String>) {
 		val collector = collectValues(sources.get())
 		applyPathFilter(collector)
 
-		if (formatValue == "both" || formatValue == "markdown") {
+		if ("markdown" in formats) {
 			extracted(createGenerator("markdown", reportName.orNull).generate(collector), outputMarkdown.get().asFile)
 		}
-		if (formatValue == "both" || formatValue == "html") {
+		if ("html" in formats) {
 			extracted(createGenerator("html", reportName.orNull).generate(collector), outputHtml.get().asFile)
+		}
+		if ("json" in formats) {
+			extracted(createGenerator("json", reportName.orNull).generate(collector), outputJson.get().asFile)
 		}
 	}
 
-	private fun actionMerged(chartsValue: List<ChartFiles>, formatValue: String) {
+	private fun actionMerged(chartsValue: List<ChartFiles>, formats: Set<String>) {
 		val charts = chartsValue.map { chart ->
 			val collector = collectValues(chart.files)
 			applyPathFilter(collector)
 			chart.name to collector
 		}
 
-		if (formatValue == "both" || formatValue == "markdown") {
+		if ("markdown" in formats) {
 			extracted(createGenerator("markdown", null).generateMerged(charts), outputMarkdown.get().asFile)
 		}
-		if (formatValue == "both" || formatValue == "html") {
+		if ("html" in formats) {
 			extracted(createGenerator("html", null).generateMerged(charts), outputHtml.get().asFile)
+		}
+		if ("json" in formats) {
+			extracted(createGenerator("json", null).generateMerged(charts), outputJson.get().asFile)
 		}
 	}
 
 	private fun createGenerator(format: String, name: String?) = when (format) {
 		"html" -> HtmlGenerator(name, wrap.getOrElse(80))
 		"markdown" -> MarkdownGenerator(name, wrap.getOrElse(80))
+		"json" -> JsonGenerator(name)
 		else -> throw IllegalArgumentException("Unsupported format specification")
 	}
 

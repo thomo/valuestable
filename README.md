@@ -2,7 +2,7 @@
 
 ![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/io.github.thomo.valuestable)
 
-Generates an overview of Helm values in Markdown and HTML format. The report files are generated in the
+Generates an overview of Helm values in Markdown, HTML, and JSON format. The report files are generated in the
 `build/valuesTable` folder.
 
 ## Requirements
@@ -39,9 +39,14 @@ valuesTable {
 	// Optional: Output directory (default: build/valuesTable)
 	target.set("build/my-overview")
 
-	// Optional: Output format - "both" (default), "markdown", or "html"
+	// Optional: Output format - unset (default), or a comma-separated list of one or more of
+	// "markdown", "html", "json".
+	// Leaving it unset generates the markdown and html reports; "json" is only generated
+	// when selected explicitly.
 	// Restrict to a single format, e.g. to generate only the HTML report:
 	format.set("html")
+	// Or combine formats, e.g. to generate html and json but skip markdown:
+	// format.set("html,json")
 
 	// Optional: insert a break opportunity every N characters in long values (default: 80),
 	// so values with no natural break point (base64 blobs, long URLs, ...) don't force wide
@@ -66,9 +71,14 @@ valuesTable {
 
 ```groovy
 valuesTable {
-    // Optional: Output format - "both" (default), "markdown", or "html"
+    // Optional: Output format - unset (default), or a comma-separated list of one or more of
+    // "markdown", "html", "json".
+    // Leaving it unset generates the markdown and html reports; "json" is only generated
+    // when selected explicitly.
     // Restrict to a single format, e.g. to generate only the HTML report:
     format = "html"
+    // Or combine formats, e.g. to generate html and json but skip markdown:
+    // format = "html,json"
 
     // Optional: insert a break opportunity every N characters in long values (default: 80),
     // so values with no natural break point (base64 blobs, long URLs, ...) don't force wide
@@ -216,6 +226,24 @@ only generating (or merging) the reports you currently need instead of every reg
 `-PvtCharts` only affects the aggregate `valuesTable` task; a chart's own sub-task (e.g. `valuesTableServiceA`) can
 always be run standalone regardless of the filter.
 
+### Overriding the format from the CLI
+
+You can force a different format than the one configured in the build script using the `-PvtFormat` parameter — useful
+to have a build script default to e.g. `html` for everyday human use, while still letting a one-off invocation (a CI
+step, or an agent that wants to parse the report) request `json` on demand without editing the build script. Accepts
+the same comma-separated syntax as `format`, and overrides it completely for that invocation.
+
+```bash
+# Build script is configured with format = "html"; this run generates only json instead
+./gradlew valuesTable -PvtFormat=json
+
+# Generate html and json in one run, regardless of what's configured
+./gradlew valuesTable -PvtFormat=html,json
+
+# No override -> uses whatever `format` is set to in the build script
+./gradlew valuesTable
+```
+
 Output:
 
 ```text
@@ -229,10 +257,41 @@ BUILD SUCCESSFUL in 1s
 
 ## Output
 
-The plugin generates two files:
+By default the plugin generates two files:
 
 1. `overview.md`: A Markdown table comparing the values.
 2. `overview.html`: An HTML table comparing the values.
+
+Setting `format = "json"` instead generates `overview.json`, a machine-readable report with the same data:
+
+```json
+{
+  "generatedAt" : "2024-01-01 12:00:00",
+  "values" : [
+    {
+      "key" : "root.a",
+      "values" : {
+        "default" : "aaa",
+        "dev" : null,
+        "test" : null
+      }
+    },
+    {
+      "key" : "root.c",
+      "values" : {
+        "default" : "ccc",
+        "dev" : null,
+        "test" : "cTest"
+      }
+    }
+  ]
+}
+```
+
+Each entry's `values` object maps every environment name to its value, in its native JSON type; `null` means that
+environment has no value of its own for that key and falls back to `default`. When `mergeCharts` is used, entries have
+a `charts` object instead, mapping chart name to that chart's `values` object (or `null` if the chart has no value at
+all for that key).
 
 ### Example Output
 
