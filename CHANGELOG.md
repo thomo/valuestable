@@ -12,6 +12,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - HTML report: values of a key are colored by group instead of one highlight color for everything that differs from
   the default. Each distinct value gets its own color, and values inheriting the default share the default's color.
   A key whose values all form a single group stays uncolored
+- gradle 9.8.2
+- kotlin 2.4.21
+- jackson 2.22.4
+- plugin-publish 2.2.1
 
 ## [1.6.2] - 2026-08-05
 
