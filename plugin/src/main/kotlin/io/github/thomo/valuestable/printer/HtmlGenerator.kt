@@ -128,14 +128,16 @@ class HtmlGenerator(private val name: String? = null, private val wrap: Int = 0)
 					display: none;
 				}
 				.value-default {
-					opacity: 0.5;
+					color: rgba(51, 51, 51, 0.5);
 					font-style: italic;
 				}
-				.value-different {
-					background-color: #fff3cd;
+				/* Golden-angle hue steps keep any number of value groups visually distinct. */
+				.value-group {
+					--hue: calc(45 + var(--group) * 137.5);
+					background-color: hsl(var(--hue) 100% 90%);
 					padding: 2px 6px;
 					border-radius: 3px;
-					border-left: 3px solid #ffc107;
+					border-left: 3px solid hsl(var(--hue) 100% 40%);
 				}
 			</style>
 			<script>
@@ -228,20 +230,19 @@ class HtmlGenerator(private val name: String? = null, private val wrap: Int = 0)
 		val names = collector.getNames()
 		val values = collector.getValues(key)
 		val defaultValue = values.firstOrNull()
+		// A null value falls back to the default, so it belongs to the default's group.
+		val groups = values.map { it ?: defaultValue }.distinct()
 
 		return values.mapIndexed { index, v ->
 			val formattedValue = ValueFormatter.format(v, index, true, wrap)
-			val cssClass = when {
-				v == null -> "value-default"  // Using default placeholder
-				index == 0 -> ""  // Default value itself, no special styling
-				v != defaultValue -> "value-different"  // Different from default
-				else -> ""  // Same as default, normal styling
-			}
-
-			val wrappedValue = if (cssClass.isNotEmpty()) {
-				"<span class=\"$cssClass\">$formattedValue</span>"
-			} else {
-				formattedValue
+			// Colors only carry information when there is more than one group to tell apart.
+			val wrappedValue = when {
+				groups.size > 1 -> {
+					val cssClass = if (v == null) "value-group value-default" else "value-group"
+					"<span class=\"$cssClass\" style=\"--group: ${groups.indexOf(v ?: defaultValue)}\">$formattedValue</span>"
+				}
+				v == null -> "<span class=\"value-default\">$formattedValue</span>"
+				else -> formattedValue
 			}
 
 			"<span class=\"label\">${names[index]}:</span>" + wrappedValue
