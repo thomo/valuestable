@@ -128,7 +128,7 @@ class HtmlGenerator(private val name: String? = null, private val wrap: Int = 0)
 					display: none;
 				}
 				.value-default {
-					opacity: 0.5;
+					color: rgba(51, 51, 51, 0.5);
 					font-style: italic;
 				}
 				/* Golden-angle hue steps keep any number of value groups visually distinct. */
@@ -231,14 +231,18 @@ class HtmlGenerator(private val name: String? = null, private val wrap: Int = 0)
 		val values = collector.getValues(key)
 		val defaultValue = values.firstOrNull()
 		// A null value falls back to the default, so it belongs to the default's group.
-		val groups = values.filter { it != null && it != defaultValue }.distinct()
+		val groups = values.map { it ?: defaultValue }.distinct()
 
 		return values.mapIndexed { index, v ->
 			val formattedValue = ValueFormatter.format(v, index, true, wrap)
-			val wrappedValue = when (v) {
-				null -> "<span class=\"value-default\">$formattedValue</span>"
-				defaultValue -> formattedValue
-				else -> "<span class=\"value-group\" style=\"--group: ${groups.indexOf(v)}\">$formattedValue</span>"
+			// Colors only carry information when there is more than one group to tell apart.
+			val wrappedValue = when {
+				groups.size > 1 -> {
+					val cssClass = if (v == null) "value-group value-default" else "value-group"
+					"<span class=\"$cssClass\" style=\"--group: ${groups.indexOf(v ?: defaultValue)}\">$formattedValue</span>"
+				}
+				v == null -> "<span class=\"value-default\">$formattedValue</span>"
+				else -> formattedValue
 			}
 
 			"<span class=\"label\">${names[index]}:</span>" + wrappedValue
