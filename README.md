@@ -299,3 +299,9 @@ all for that key).
 |:---------|:------------------------------------------------------|
 | `root.a` | default: "aaa"<br/>dev: *default*<br/>test: *default* |
 | `root.c` | default: "ccc"<br/>dev: null<br/>test: "cTest"        |
+
+## Support
+
+Like this plugin? Keep me awake and coding — buy me a coffee ☕️.
+
+<a href="https://www.buymeacoffee.com/thomo" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
