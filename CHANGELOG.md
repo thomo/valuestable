@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.3] - 2026-11-04
+
+### Changed
+
+- HTML report: values of a key are colored by group. Values equal to the default stay uncolored, and each other
+  distinct value gets its own color, instead of one highlight color for everything that differs from the default
+
 ## [1.6.2] - 2026-08-05
 
 ### Added

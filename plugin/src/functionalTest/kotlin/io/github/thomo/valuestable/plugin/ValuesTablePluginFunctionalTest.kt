@@ -177,6 +177,64 @@ class ValuesTablePluginFunctionalTest {
 			)
 		}
 
+		@Test
+		fun `values of a key are colored by group and the default group stays uncolored`() {
+			createValuesFile(File(getProjectDir(), "testdata/values-dev.yaml"), "b", "ccc")
+			createValuesFile(File(getProjectDir(), "testdata/values-test.yaml"), "b", "cShared")
+			createValuesFile(File(getProjectDir(), "testdata/values-uat.yaml"), "b", "cShared")
+			createValuesFile(File(getProjectDir(), "testdata/values-prod.yaml"), "b", "cProd")
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					files {
+						'default' {
+							file = "testdata/values.yaml"
+						}
+						dev {
+							file = "testdata/values-dev.yaml"
+						}
+						test {
+							file = "testdata/values-test.yaml"
+						}
+						uat {
+							file = "testdata/values-uat.yaml"
+						}
+						prod {
+							file = "testdata/values-prod.yaml"
+						}
+					}
+				}
+				""".trimIndent()
+			)
+
+			runGradle("valuesTable")
+
+			val lines = File(tempFolder, DEFAULT_TARGET_HTML).readLines()
+			assertThat(
+				lines,
+				hasItem(
+					"""<tr><td><code>root<wbr>.c</code></td><td class="value-cell"><span class="label">default:</span>"ccc"<br/><span class="label">dev:</span>"ccc"<br/><span class="label">test:</span><span class="value-group" style="--group: 0">"cShared"</span><br/><span class="label">uat:</span><span class="value-group" style="--group: 0">"cShared"</span><br/><span class="label">prod:</span><span class="value-group" style="--group: 1">"cProd"</span></td></tr>"""
+				)
+			)
+		}
+
+		@Test
+		fun `every distinct value gets its own group when the default is not defined`() {
+			runGradle("valuesTable")
+
+			val lines = File(tempFolder, DEFAULT_TARGET_HTML).readLines()
+			assertThat(
+				lines,
+				hasItem(
+					"""<tr><td><code>root<wbr>.b</code></td><td class="value-cell"><span class="label">default:</span><span class="value-default"><i>(n.d.)</i></span><br/><span class="label">test:</span><span class="value-group" style="--group: 0">"bTest"</span><br/><span class="label">dev:</span><span class="value-group" style="--group: 1">"bDev"</span></td></tr>"""
+				)
+			)
+		}
+
 	}
 
 	@Nested
