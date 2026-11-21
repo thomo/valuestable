@@ -16,6 +16,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `<wbr>` line wrapping no longer splits HTML entities or emoji
 - Reading large values files is linear instead of quadratic in the number of keys
 
+### Changed
+
+- gradle 9.9.2
+
 ## [1.6.3] - 2026-11-04
 
 ### Changed
