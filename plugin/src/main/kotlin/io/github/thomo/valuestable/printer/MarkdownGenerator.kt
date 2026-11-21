@@ -9,7 +9,7 @@ class MarkdownGenerator(private val name: String? = null, private val wrap: Int 
 		val keys = collector.keys()
 
 		val result = mutableListOf<String>()
-		result.add(if (name.isNullOrBlank()) "# Values" else "# Values '$name'")
+		result.add(if (name.isNullOrBlank()) "# Values" else "# Values '${ValueFormatter.escape(name, false)}'")
 		result.add("")
 		result.add("generated at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
 		result.add("")
@@ -26,13 +26,13 @@ class MarkdownGenerator(private val name: String? = null, private val wrap: Int 
 		val globalKeys = keySets.flatten().toSet().sorted()
 
 		val result = mutableListOf<String>()
-		result.add(if (name.isNullOrBlank()) "# Values" else "# Values '$name'")
+		result.add(if (name.isNullOrBlank()) "# Values" else "# Values '${ValueFormatter.escape(name, false)}'")
 		result.add("")
 		result.add("generated at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
 		result.add("")
 		result.add("[ValuesTable Plugin](https://github.com/thomo/valuestable)")
 		result.add("")
-		result.add("|key|" + charts.joinToString("|") { it.first } + "|")
+		result.add("|key|" + charts.joinToString("|") { ValueFormatter.escape(it.first, false) } + "|")
 		result.add("|---|" + charts.joinToString("|") { ":-----" } + "|")
 		globalKeys.forEach { key -> result.add(buildMergedLine(key, charts, keySets)) }
 		return result
@@ -40,10 +40,10 @@ class MarkdownGenerator(private val name: String? = null, private val wrap: Int 
 
 	override fun fileExtension() = "md"
 
-	private fun buildLine(key: String, vc: ValueCollector) = "|" + key.replace(".", "<wbr>.") + "|" + buildCell(key, vc) + "|"
+	private fun buildLine(key: String, vc: ValueCollector) = "|" + ValueFormatter.formatKey(key, false) + "|" + buildCell(key, vc) + "|"
 
 	private fun buildMergedLine(key: String, charts: List<Pair<String, ValueCollector>>, keySets: List<Set<String>>): String {
-		val formattedKey = key.replace(".", "<wbr>.")
+		val formattedKey = ValueFormatter.formatKey(key, false)
 		val cells = charts.mapIndexed { index, (_, vc) -> if (key in keySets[index]) buildCell(key, vc) else "" }
 		return "|$formattedKey|" + cells.joinToString("|") + "|"
 	}
@@ -51,7 +51,7 @@ class MarkdownGenerator(private val name: String? = null, private val wrap: Int 
 	private fun buildCell(key: String, vc: ValueCollector): String {
 		val names = vc.getNames()
 		return vc.getValues(key)
-			.mapIndexed { index, v -> names[index] + ": " + ValueFormatter.format(v, index, false, wrap) }
+			.mapIndexed { index, v -> ValueFormatter.escape(names[index], false) + ": " + ValueFormatter.format(v, index, false, wrap) }
 			.joinToString("<br/>")
 	}
 }
