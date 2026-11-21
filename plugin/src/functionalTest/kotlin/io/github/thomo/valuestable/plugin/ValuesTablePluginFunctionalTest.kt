@@ -1435,6 +1435,92 @@ class ValuesTablePluginFunctionalTest {
 	}
 
 	@Nested
+	inner class Validation {
+		private fun writeBuildFile(valuesBlock: String) = getBuildFile().writeText(
+			"""
+			plugins {
+				id('io.github.thomo.valuestable')
+			}
+
+			valuesTable {
+				$valuesBlock
+			}
+			""".trimIndent()
+		)
+
+		@Test
+		fun `mask hides matching values in all formats`() {
+			File(getProjectDir(), "testdata/secret.yaml").writeText("db:\n  password: s3cr3t\n  host: db.local\n")
+			File(getProjectDir(), "testdata/secret-dev.yaml").writeText("db:\n  password: dev-pw\n")
+			writeBuildFile(
+				"""
+				format = "markdown,html,json"
+				mask = ["(?i)password"]
+				files {
+					'default' { file = "testdata/secret.yaml" }
+					dev { file = "testdata/secret-dev.yaml" }
+				}
+				"""
+			)
+
+			runGradle("valuesTable")
+
+			val md = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readText()
+			val html = File(tempFolder, DEFAULT_TARGET_HTML).readText()
+			val json = File(tempFolder, DEFAULT_TARGET_JSON).readText()
+			listOf(md, html, json).forEach { report ->
+				assertFalse(report.contains("s3cr3t"))
+				assertFalse(report.contains("dev-pw"))
+				assertThat(report, containsString("db.local"))
+			}
+			assertThat(md, containsString("|db<wbr>.password|default: \\*\\*\\*<br/>dev: \\*\\*\\*|"))
+			// different real values still get different colors
+			assertThat(html, containsString("""style="--group: 0">***</span>"""))
+			assertThat(html, containsString("""style="--group: 1">***</span>"""))
+			assertThat(json, containsString(""""dev" : "***""""))
+		}
+
+		@Test
+		fun `invalid mask pattern fails with a clear error`() {
+			writeBuildFile(
+				"""
+				mask = ["("]
+				files { 'default' { file = "$VALUES_DEFAULT_FILENAME" } }
+				"""
+			)
+
+			val result = runGradleAndFail("valuesTable")
+
+			assertThat(result.output, containsString("invalid `mask` pattern '('"))
+		}
+
+		@Test
+		fun `chart name with path separator is rejected`() {
+			writeBuildFile(
+				"""
+				charts {
+					'../evil' { files { 'default' { file = "$VALUES_DEFAULT_FILENAME" } } }
+				}
+				"""
+			)
+
+			val result = runGradleAndFail("valuesTable")
+
+			assertThat(result.output, containsString("chart name '../evil' must not contain"))
+		}
+
+		@Test
+		fun `multi-document values file fails with a clear error`() {
+			File(getProjectDir(), "testdata/multi.yaml").writeText("a: 1\n---\nb: 2\n")
+			writeBuildFile("files { 'default' { file = \"testdata/multi.yaml\" } }")
+
+			val result = runGradleAndFail("valuesTable")
+
+			assertThat(result.output, containsString("contains 2 YAML documents"))
+		}
+	}
+
+	@Nested
 	inner class ConfigurationCache {
 
 		// A build with configuration-cache problems fails outright (the default is

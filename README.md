@@ -53,6 +53,10 @@ valuesTable {
 	// table columns. Set to 0 to disable wrapping.
 	wrap.set(80)
 
+	// Optional: hide the values of keys matching any of these regexes (searched within the
+	// dotted key) in every report, e.g. passwords and tokens. Default: nothing is masked.
+	mask.set(listOf("(?i)password|secret|token"))
+
 	files {
 		register("default") {
 			file = "values.yaml"
@@ -85,6 +89,10 @@ valuesTable {
     // table columns. Set to 0 to disable wrapping.
     wrap = 80
 
+    // Optional: hide the values of keys matching any of these regexes (searched within the
+    // dotted key) in every report, e.g. passwords and tokens. Default: nothing is masked.
+    mask = ["(?i)password|secret|token"]
+
     files {
         'default' {
             file = "values.yaml"
@@ -98,6 +106,13 @@ valuesTable {
     }
 }
 ```
+
+Masked values are shown as `***`. The HTML report still colors them by their real value, so you can see which
+environments share a secret without seeing it. Keys with literal dots appear escaped as `\.` (see
+[Filtering by Path](#filtering-by-path)), so write patterns against that form.
+
+Each values file must contain a single YAML document. A file with several `---`-separated documents fails the build
+with an error instead of silently reporting only the first one.
 
 ### Generating separate tables per chart (e.g. per subchart)
 
@@ -127,6 +142,8 @@ valuesTable {
 	}
 }
 ```
+
+Chart names are used as report file names, so they must not contain `/`, `\` or `..`.
 
 `target` and `format` are configured once, at the same level as `charts { }`, and apply to every chart. Each chart entry
 only needs its own `files { }`. Every entry gets its own generation task, named `valuesTable<Name>` (e.g.

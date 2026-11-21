@@ -7,6 +7,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `mask` option: values of keys matching any of the given regexes are shown as `***` in every report, e.g.
+  `mask = ["(?i)password|secret|token"]`. The HTML report still colors masked values by their real value
+
+### Changed
+
+- A values file with several `---`-separated YAML documents now fails the build instead of silently reporting only
+  the first document
+- Chart names containing `/`, `\` or `..` are rejected, since they are used as report file names
+- gradle 9.9.2
+
 ### Fixed
 
 - HTML and Markdown reports escape keys, values, environment and chart names, so content from values files can't
@@ -15,10 +27,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   nested `a: { b: y }`
 - `<wbr>` line wrapping no longer splits HTML entities or emoji
 - Reading large values files is linear instead of quadratic in the number of keys
-
-### Changed
-
-- gradle 9.9.2
 
 ## [1.6.3] - 2026-11-04
 

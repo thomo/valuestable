@@ -60,8 +60,13 @@ class JsonGenerator(private val name: String? = null) : Generator {
 	private fun buildValuesNode(key: String, vc: ValueCollector): ObjectNode {
 		val node = mapper.createObjectNode()
 		val names = vc.getNames()
+		val masked = vc.isMasked(key)
 		vc.getValues(key).forEachIndexed { index, v ->
-			if (v == null) node.putNull(names[index]) else node.set<JsonNode>(names[index], mapper.readTree(v))
+			when {
+				v == null -> node.putNull(names[index])
+				masked -> node.put(names[index], ValueFormatter.MASK)
+				else -> node.set<JsonNode>(names[index], mapper.readTree(v))
+			}
 		}
 		return node
 	}

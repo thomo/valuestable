@@ -37,4 +37,11 @@ class ValueFormatterTest {
 	fun `key markup is escaped`() {
 		assertEquals("a<wbr>.&lt;/code&gt;&lt;script&gt;", ValueFormatter.formatKey("a.</code><script>", true))
 	}
+
+	@Test
+	fun `masked values are hidden, undefined values are not`() {
+		assertEquals("***", ValueFormatter.format("\"s3cr3t\"", 1, true, masked = true))
+		assertEquals("\\*\\*\\*", ValueFormatter.format("\"s3cr3t\"", 1, false, masked = true))
+		assertEquals("<i>default</i>", ValueFormatter.format(null, 1, true, masked = true))
+	}
 }
