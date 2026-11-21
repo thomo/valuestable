@@ -210,6 +210,11 @@ You can restrict the output to keys that start with a specific path using the `-
 ./gradlew valuesTable -PvtPath=root.config -PvtEnvs=dev,test
 ```
 
+Dots that are part of a key itself are shown escaped as `\.` (like Helm's `--set`), so a key such as
+`nginx.ingress.kubernetes.io/ssl-redirect` under `ingress.annotations` appears as
+`ingress.annotations.nginx\.ingress\.kubernetes\.io/ssl-redirect` and never collides with a nested path. Use the
+same escaping in `-PvtPath`, e.g. `-PvtPath='ingress.annotations.nginx\.ingress'`.
+
 ### Filtering Charts
 
 When using `charts { }`, you can restrict `valuesTable` to specific charts using the `-PvtCharts` parameter — useful for

@@ -1360,6 +1360,81 @@ class ValuesTablePluginFunctionalTest {
 	}
 
 	@Nested
+	inner class Escaping {
+		@BeforeEach
+		internal fun setUp() {
+			File(getProjectDir(), "testdata/evil.yaml").apply {
+				parentFile.mkdirs()
+				writeText(
+					"""
+					---
+					nginx.ingress.enabled: false
+					nginx:
+					  ingress:
+					    enabled: true
+					root:
+					  xss: "<img src=x onerror=alert(1)>"
+					  pipe: "a|b"
+					  "</code><script>": 1
+					""".trimIndent()
+				)
+			}
+			getBuildFile().writeText(
+				"""
+				plugins {
+					id('io.github.thomo.valuestable')
+				}
+
+				valuesTable {
+					files {
+						'<b>env</b>' {
+							file = "testdata/evil.yaml"
+						}
+					}
+				}
+				""".trimIndent()
+			)
+		}
+
+		@Test
+		fun `html output escapes keys, values and env names`() {
+			runGradle("valuesTable")
+
+			val html = File(tempFolder, DEFAULT_TARGET_HTML).readText()
+
+			assertFalse(html.contains("<img"))
+			assertFalse(html.contains("</code><script>"))
+			assertFalse(html.contains("<b>env</b>"))
+			assertThat(html, containsString(""""&lt;img src=x onerror=alert(1)&gt;""""))
+			assertThat(html, containsString("<code>root<wbr>.&lt;/code&gt;&lt;script&gt;</code>"))
+			assertThat(html, containsString("""<span class="label">&lt;b&gt;env&lt;/b&gt;:</span>"""))
+		}
+
+		@Test
+		fun `literal dotted key and nested path get separate rows`() {
+			runGradle("valuesTable")
+
+			val html = File(tempFolder, DEFAULT_TARGET_HTML).readText()
+			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines()
+
+			assertThat(html, containsString("<code>nginx\\.ingress\\.enabled</code>"))
+			assertThat(html, containsString("<code>nginx<wbr>.ingress<wbr>.enabled</code>"))
+			assertThat(lines, hasItem("|nginx\\\\.ingress\\\\.enabled|&lt;b&gt;env&lt;/b&gt;: false|"))
+			assertThat(lines, hasItem("|nginx<wbr>.ingress<wbr>.enabled|&lt;b&gt;env&lt;/b&gt;: true|"))
+		}
+
+		@Test
+		fun `markdown output escapes pipes and markup`() {
+			runGradle("valuesTable")
+
+			val lines = File(tempFolder, DEFAULT_TARGET_MARKDOWN).readLines()
+
+			assertThat(lines, hasItem("""|root<wbr>.pipe|&lt;b&gt;env&lt;/b&gt;: "a\|b"|"""))
+			assertThat(lines, hasItem("""|root<wbr>.xss|&lt;b&gt;env&lt;/b&gt;: "&lt;img src=x onerror=alert(1)&gt;"|"""))
+		}
+	}
+
+	@Nested
 	inner class ConfigurationCache {
 
 		// A build with configuration-cache problems fails outright (the default is

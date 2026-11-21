@@ -5,31 +5,30 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.github.thomo.valuestable.model.ValueMap
-import io.github.thomo.valuestable.model.emptyValueMap
 import java.nio.file.Path
 
 class ValueReader() {
 	fun read(fileName: Path): ValueMap {
 		val mapper = ObjectMapper(YAMLFactory()).registerKotlinModule()
 
-		var node = mapper.readTree(fileName.toFile())
+		val node = mapper.readTree(fileName.toFile())
 
-		return node?.run { buildValues(node, "") } ?: emptyValueMap()
+		return mutableMapOf<String, String?>().also { result -> node?.let { buildValues(it, "", result) } }
 	}
 
-	private fun buildValues(node: JsonNode, prefix: String): ValueMap {
-		var result = emptyValueMap()
-		return if (node.isObject) {
-			node.fieldNames().forEach { key ->
-				val subNode = node.get(key)
-				result = result.toMutableMap().apply { putAll(buildValues(subNode, buildKey(prefix, key))) }
-			}
-			result
+	private fun buildValues(node: JsonNode, prefix: String, result: MutableMap<String, String?>) {
+		if (node.isObject) {
+			node.properties().forEach { (key, subNode) -> buildValues(subNode, buildKey(prefix, key), result) }
 		} else {
-			result.toMutableMap().apply { put(prefix, if (node.isNull) null else node.toString()) }
+			result[prefix] = if (node.isNull) null else node.toString()
 		}
 	}
 
-	private fun buildKey(prefix: String, key: String) = if (prefix.isBlank()) key else "$prefix.$key"
+	// Escapes `\` and `.` inside a key like Helm's `--set` does, so a literal `a.b` key stays
+	// distinguishable from a nested `a: { b }` instead of overwriting it.
+	private fun buildKey(prefix: String, key: String): String {
+		val escaped = key.replace("\\", "\\\\").replace(".", "\\.")
+		return if (prefix.isBlank()) escaped else "$prefix.$escaped"
+	}
 
 }

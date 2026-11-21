@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- HTML and Markdown reports escape keys, values, environment and chart names, so content from values files can't
+  inject markup or scripts (e.g. `<img onerror=...>`) or, in Markdown, break the table with `|` or newlines
+- Keys containing literal dots are shown with `\.` (like Helm's `--set`), so `a.b: x` no longer collides with a
+  nested `a: { b: y }`
+- `<wbr>` line wrapping no longer splits HTML entities or emoji
+- Reading large values files is linear instead of quadratic in the number of keys
+
+### Changed
+
+- gradle 9.9.2
+
 ## [1.6.3] - 2026-11-04
 
 ### Changed

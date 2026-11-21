@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class HtmlGenerator(private val name: String? = null, private val wrap: Int = 0) : Generator {
-	private val title = if (name.isNullOrBlank()) "Values Overview" else "Values Overview '$name'"
+	private val title = if (name.isNullOrBlank()) "Values Overview" else "Values Overview '${ValueFormatter.escape(name, true)}'"
 
 	override fun generate(collector: ValueCollector) = pageShell() +
 		generateTableHead() + "<tbody>" + generateTableRows(collector) +
@@ -204,12 +204,12 @@ class HtmlGenerator(private val name: String? = null, private val wrap: Int = 0)
 		collector.keys().map { key -> "<tr>" + generateTableRow(key, collector) + "</tr>" }
 
 	fun generateTableRow(key: String, collector: ValueCollector): String {
-		val formattedKey = key.replace(".", "<wbr>.")
+		val formattedKey = ValueFormatter.formatKey(key, true)
 		return "<td><code>$formattedKey</code></td><td class=\"value-cell\">" + buildValueCellContent(key, collector) + "</td>"
 	}
 
 	private fun generateMergedTableHead(charts: List<Pair<String, ValueCollector>>) =
-		"<thead><tr><th>Key</th>" + charts.joinToString("") { (name, _) -> "<th>$name</th>" } + "</tr></thead>"
+		"<thead><tr><th>Key</th>" + charts.joinToString("") { (name, _) -> "<th>${ValueFormatter.escape(name, true)}</th>" } + "</tr></thead>"
 
 	private fun generateMergedTableRows(
 		keys: List<String>,
@@ -218,7 +218,7 @@ class HtmlGenerator(private val name: String? = null, private val wrap: Int = 0)
 	) = keys.map { key -> "<tr>" + generateMergedTableRow(key, charts, keySets) + "</tr>" }
 
 	private fun generateMergedTableRow(key: String, charts: List<Pair<String, ValueCollector>>, keySets: List<Set<String>>): String {
-		val formattedKey = key.replace(".", "<wbr>.")
+		val formattedKey = ValueFormatter.formatKey(key, true)
 		val cells = charts.mapIndexed { index, (_, vc) ->
 			val content = if (key in keySets[index]) buildValueCellContent(key, vc) else ""
 			"<td class=\"value-cell\">$content</td>"
@@ -245,7 +245,7 @@ class HtmlGenerator(private val name: String? = null, private val wrap: Int = 0)
 				else -> formattedValue
 			}
 
-			"<span class=\"label\">${names[index]}:</span>" + wrappedValue
+			"<span class=\"label\">${ValueFormatter.escape(names[index], true)}:</span>" + wrappedValue
 		}.joinToString("<br/>")
 	}
 
