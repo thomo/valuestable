@@ -95,6 +95,15 @@ class ValuesTablePluginFunctionalTest {
 		}
 
 		@Test
+		fun `prints a valid file URL to the report`() {
+			val result = runGradle("valuesTable")
+
+			val url = Regex("Overview generated at (\\S+overview\\.html)").find(result.output)!!.groupValues[1]
+			assertTrue(url.startsWith("file:///"))
+			assertTrue(File(java.net.URI(url)).isFile)
+		}
+
+		@Test
 		fun `should show task description`() {
 			getBuildFile().writeText(
 				"""

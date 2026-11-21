@@ -147,7 +147,9 @@ open class ValuesTableTask @Inject constructor(
 
 	private fun extracted(lines: List<String>, file: File) {
 		writeOutput(lines, file)
-		println("Overview generated at file://${file.absolutePath}")
+		// `toUri()` yields a valid, clickable file URL on every OS (`file:///C:/...` on Windows) and
+		// percent-encodes spaces; concatenating "file://" with the raw path does neither.
+		println("Overview generated at ${file.absoluteFile.toPath().toUri()}")
 	}
 
 	private fun writeOutput(lines: List<String>, output: File) {

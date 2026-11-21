@@ -27,6 +27,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   nested `a: { b: y }`
 - `<wbr>` line wrapping no longer splits HTML entities or emoji
 - Reading large values files is linear instead of quadratic in the number of keys
+- The report link printed after generation is a valid file URL on Windows (`file:///C:/...`) and for paths
+  containing spaces
 
 ## [1.6.3] - 2026-11-04
 
