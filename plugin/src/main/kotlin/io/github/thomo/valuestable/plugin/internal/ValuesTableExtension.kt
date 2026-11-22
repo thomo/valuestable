@@ -2,6 +2,7 @@ package io.github.thomo.valuestable.plugin.internal
 
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 
 open class ValuesTableExtension(project: Project) {
@@ -29,6 +30,11 @@ open class ValuesTableExtension(project: Project) {
 	// Column-widening long values (e.g. base64 blobs, URLs) get a <wbr> break opportunity every
 	// `wrap` characters. `wrap = 0` disables wrapping.
 	val wrap: Property<Int> = project.objects.property(Int::class.java).convention(80)
+
+	// Regexes matched (as a substring search) against each dotted key; values of matching keys are
+	// shown as "***" in every report, e.g. `mask = ["(?i)password|secret|token"]`. Empty (the
+	// default) masks nothing.
+	val mask: ListProperty<String> = project.objects.listProperty(String::class.java).convention(emptyList())
 
 	val files: NamedDomainObjectContainer<NamedFile> = project.objects.domainObjectContainer(NamedFile::class.java).also { container ->
 		container.whenObjectAdded { file ->

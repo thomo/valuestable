@@ -234,7 +234,7 @@ class HtmlGenerator(private val name: String? = null, private val wrap: Int = 0)
 		val groups = values.map { it ?: defaultValue }.distinct()
 
 		return values.mapIndexed { index, v ->
-			val formattedValue = ValueFormatter.format(v, index, true, wrap)
+			val formattedValue = ValueFormatter.format(v, index, true, wrap, collector.isMasked(key))
 			// Colors only carry information when there is more than one group to tell apart.
 			val wrappedValue = when {
 				groups.size > 1 -> {

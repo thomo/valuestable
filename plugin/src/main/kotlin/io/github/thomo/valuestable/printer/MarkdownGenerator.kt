@@ -51,7 +51,7 @@ class MarkdownGenerator(private val name: String? = null, private val wrap: Int 
 	private fun buildCell(key: String, vc: ValueCollector): String {
 		val names = vc.getNames()
 		return vc.getValues(key)
-			.mapIndexed { index, v -> ValueFormatter.escape(names[index], false) + ": " + ValueFormatter.format(v, index, false, wrap) }
+			.mapIndexed { index, v -> ValueFormatter.escape(names[index], false) + ": " + ValueFormatter.format(v, index, false, wrap, vc.isMasked(key)) }
 			.joinToString("<br/>")
 	}
 }

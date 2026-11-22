@@ -6,12 +6,14 @@ import io.github.thomo.valuestable.printer.HtmlGenerator
 import io.github.thomo.valuestable.printer.JsonGenerator
 import io.github.thomo.valuestable.printer.MarkdownGenerator
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
 import java.io.File
+import java.util.regex.PatternSyntaxException
 import javax.inject.Inject
 
 @CacheableTask
@@ -42,6 +44,9 @@ open class ValuesTableTask @Inject constructor(
 
 	@Input
 	val wrap: Property<Int> = project.objects.property(Int::class.java).convention(80)
+
+	@Input
+	val mask: ListProperty<String> = project.objects.listProperty(String::class.java).convention(emptyList())
 
 	@Input
 	@Optional
@@ -142,7 +147,9 @@ open class ValuesTableTask @Inject constructor(
 
 	private fun extracted(lines: List<String>, file: File) {
 		writeOutput(lines, file)
-		println("Overview generated at file://${file.absolutePath}")
+		// `toUri()` yields a valid, clickable file URL on every OS (`file:///C:/...` on Windows) and
+		// percent-encodes spaces; concatenating "file://" with the raw path does neither.
+		println("Overview generated at ${file.absoluteFile.toPath().toUri()}")
 	}
 
 	private fun writeOutput(lines: List<String>, output: File) {
@@ -154,9 +161,18 @@ open class ValuesTableTask @Inject constructor(
 		val reader = ValueReader()
 		val filteredSources = filterSources(sources)
 		return ValueCollector().apply {
+			setMask(maskPatterns())
 			filteredSources.forEach { src ->
 				this.add(src.name, reader.read(layout.projectDirectory.file(src.file).asFile.toPath()))
 			}
+		}
+	}
+
+	private fun maskPatterns() = mask.get().map { pattern ->
+		try {
+			Regex(pattern)
+		} catch (e: PatternSyntaxException) {
+			throw GradleException("valuesTable: invalid `mask` pattern '$pattern': ${e.description}", e)
 		}
 	}
 

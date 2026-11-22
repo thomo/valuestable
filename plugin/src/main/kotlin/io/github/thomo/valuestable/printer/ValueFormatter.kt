@@ -1,9 +1,11 @@
 package io.github.thomo.valuestable.printer
 
 object ValueFormatter {
-    fun format(value: String?, index: Int, isHtml: Boolean, wrap: Int = 0): String {
+    const val MASK = "***"
+
+    fun format(value: String?, index: Int, isHtml: Boolean, wrap: Int = 0, masked: Boolean = false): String {
         if (value != null) {
-            return wrap(value, isHtml, wrap)
+            return if (!masked) wrap(value, isHtml, wrap) else if (isHtml) MASK else MASK.replace("*", "\\*")
         }
 
         val text = if (index == 0) "(n.d.)" else "default"

@@ -46,6 +46,7 @@ class ValuesTablePlugin : Plugin<Project> {
 		task.vtEnvs.set(ext.vtEnvs)
 		task.vtPath.set(ext.vtPath)
 		task.wrap.set(ext.wrap)
+		task.mask.set(ext.mask)
 		task.sources.set(project.provider { ext.getFilesInOrder() })
 		// Only populated when `charts { }` + `mergeCharts` are both used; drives the merged
 		// single-report path in ValuesTableTask instead of the flat `sources` list. Respects
@@ -88,6 +89,14 @@ class ValuesTablePlugin : Plugin<Project> {
 		// `charts { }` entries are populated after `apply()` runs, while the build script is
 		// evaluated, so register sub-tasks lazily via `all { }` rather than iterating eagerly here.
 		ext.charts.all { spec ->
+			// The chart name becomes the report's file name inside `target`, so it must not be
+			// able to point somewhere else.
+			if (spec.name.contains('/') || spec.name.contains('\\') || spec.name.contains("..")) {
+				throw GradleException(
+					"valuesTable: chart name '${spec.name}' must not contain '/', '\\' or '..', " +
+						"because it is used as the report's file name."
+				)
+			}
 			val subTaskName = TASK_NAME + spec.name.replaceFirstChar { it.uppercaseChar() }
 			val subTask = project.tasks.register(subTaskName, ValuesTableTask::class.java).get().apply {
 				this.group = TASK_GROUP
@@ -104,6 +113,7 @@ class ValuesTablePlugin : Plugin<Project> {
 			subTask.vtEnvs.set(ext.vtEnvs)
 			subTask.vtPath.set(ext.vtPath)
 			subTask.wrap.set(ext.wrap)
+			subTask.mask.set(ext.mask)
 			subTask.reportName.set(spec.name)
 			subTask.sources.set(project.provider { spec.getFilesInOrder() })
 			subTask.outputMarkdown.set(subTask.target.map { path -> project.layout.projectDirectory.file("$path.md") })
